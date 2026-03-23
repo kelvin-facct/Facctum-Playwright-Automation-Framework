@@ -1,0 +1,19 @@
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Test Reports & Artifacts
+reports/
+
+# Secrets - never commit credentials
+src/config/.env.secrets
+.env.secrets
+*.secrets
+
+# Logs
+*.log

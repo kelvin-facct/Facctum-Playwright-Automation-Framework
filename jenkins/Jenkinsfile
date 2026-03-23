@@ -1,0 +1,102 @@
+pipeline {
+    agent any
+    
+    parameters {
+        choice(name: 'ENV', choices: ['qa', 'dev', 'stage', 'uat'], description: 'Target environment')
+        choice(name: 'BROWSER', choices: ['chromium', 'firefox', 'webkit'], description: 'Browser to run tests')
+        booleanParam(name: 'HEADLESS', defaultValue: true, description: 'Run in headless mode')
+        string(name: 'PARALLEL', defaultValue: '0', description: 'Number of parallel workers (0 = sequential)')
+        string(name: 'RETRY', defaultValue: '1', description: 'Number of retry attempts for failed tests')
+        string(name: 'FEATURE_FILE', defaultValue: '', description: 'Specific feature file to run (leave empty for all)')
+    }
+    
+    environment {
+        ENV = "${params.ENV}"
+        BROWSER = "${params.BROWSER}"
+        HEADLESS = "${params.HEADLESS}"
+        PARALLEL = "${params.PARALLEL}"
+        RETRY = "${params.RETRY}"
+        NODE_OPTIONS = '--max-old-space-size=4096'
+    }
+    
+    options {
+        timeout(time: 60, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '20', artifactNumToKeepStr: '10'))
+        timestamps()
+        ansiColor('xterm')
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Setup') {
+            steps {
+                script {
+                    echo "Environment: ${params.ENV}"
+                    echo "Browser: ${params.BROWSER}"
+                    echo "Headless: ${params.HEADLESS}"
+                    echo "Parallel Workers: ${params.PARALLEL}"
+                }
+                
+                // Install Node.js dependencies
+                bat 'npm ci'
+                
+                // Install Playwright browsers
+                bat 'npx playwright install --with-deps'
+            }
+        }
+        
+        stage('Run Tests') {
+            steps {
+                script {
+                    def testCommand = params.FEATURE_FILE?.trim() 
+                        ? "npm run test:file ${params.FEATURE_FILE}"
+                        : "npm run test:ci"
+                    
+                    // Run tests - continue even if tests fail
+                    catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                        bat testCommand
+                    }
+                }
+            }
+        }
+        
+        stage('Generate Report') {
+            steps {
+                bat "npx allure-commandline generate reports/${params.ENV}/allure-results -o reports/${params.ENV}/allure-report --clean"
+            }
+        }
+    }
+    
+    post {
+        always {
+            // Archive Allure results
+            archiveArtifacts artifacts: "reports/${params.ENV}/allure-results/**/*", allowEmptyArchive: true
+            archiveArtifacts artifacts: "reports/${params.ENV}/allure-report/**/*", allowEmptyArchive: true
+            archiveArtifacts artifacts: "reports/${params.ENV}/cucumber-report.json", allowEmptyArchive: true
+            
+            // Publish Allure Report (requires Allure Jenkins Plugin)
+            allure([
+                includeProperties: false,
+                jdk: '',
+                results: [[path: "reports/${params.ENV}/allure-results"]]
+            ])
+        }
+        
+        failure {
+            // Archive screenshots, traces, videos on failure
+            archiveArtifacts artifacts: "reports/${params.ENV}/runs/**/*", allowEmptyArchive: true
+        }
+        
+        cleanup {
+            cleanWs(cleanWhenNotBuilt: false,
+                    deleteDirs: true,
+                    disableDeferredWipeout: true,
+                    notFailBuild: true)
+        }
+    }
+}

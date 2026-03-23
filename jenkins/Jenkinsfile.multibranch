@@ -1,0 +1,97 @@
+// Multibranch Pipeline Jenkinsfile
+// Use this when you want automatic branch detection and PR builds
+
+pipeline {
+    agent any
+    
+    parameters {
+        choice(name: 'ENV', choices: ['qa', 'dev', 'stage', 'uat'], description: 'Target environment')
+        choice(name: 'BROWSER', choices: ['chromium', 'firefox', 'webkit'], description: 'Browser to run tests')
+        booleanParam(name: 'HEADLESS', defaultValue: true, description: 'Run in headless mode')
+        string(name: 'PARALLEL', defaultValue: '0', description: 'Number of parallel workers')
+        string(name: 'RETRY', defaultValue: '1', description: 'Retry attempts for failed tests')
+    }
+    
+    environment {
+        ENV = "${params.ENV ?: 'qa'}"
+        BROWSER = "${params.BROWSER ?: 'chromium'}"
+        HEADLESS = "${params.HEADLESS ?: true}"
+        PARALLEL = "${params.PARALLEL ?: '0'}"
+        RETRY = "${params.RETRY ?: '1'}"
+        NODE_OPTIONS = '--max-old-space-size=4096'
+    }
+    
+    options {
+        timeout(time: 60, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        timestamps()
+        ansiColor('xterm')
+    }
+    
+    triggers {
+        // Run nightly at 2 AM on weekdays (only on main branch)
+        cron(env.BRANCH_NAME == 'main' ? 'H 2 * * 1-5' : '')
+    }
+    
+    stages {
+        stage('Setup') {
+            steps {
+                script {
+                    // Set build description
+                    currentBuild.description = "ENV: ${env.ENV} | Browser: ${env.BROWSER}"
+                }
+                bat 'npm ci'
+                bat 'npx playwright install --with-deps'
+            }
+        }
+        
+        stage('Lint & Validate') {
+            when {
+                changeRequest()  // Only on PRs
+            }
+            steps {
+                bat 'npx tsc --noEmit'
+            }
+        }
+        
+        stage('Run Tests') {
+            steps {
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                    bat 'npm run test:ci'
+                }
+            }
+        }
+        
+        stage('Generate Report') {
+            steps {
+                bat "npx allure-commandline generate reports/${env.ENV}/allure-results -o reports/${env.ENV}/allure-report --clean"
+            }
+        }
+    }
+    
+    post {
+        always {
+            archiveArtifacts artifacts: "reports/${env.ENV}/**/*", allowEmptyArchive: true
+            
+            allure([
+                includeProperties: false,
+                results: [[path: "reports/${env.ENV}/allure-results"]]
+            ])
+        }
+        
+        failure {
+            archiveArtifacts artifacts: "reports/${env.ENV}/runs/**/*", allowEmptyArchive: true
+            
+            // Uncomment to enable email notifications
+            // emailext (
+            //     subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            //     body: "Build failed. Check: ${env.BUILD_URL}",
+            //     recipientProviders: [requestor(), developers()]
+            // )
+        }
+        
+        cleanup {
+            cleanWs()
+        }
+    }
+}
