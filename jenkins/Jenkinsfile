@@ -37,6 +37,7 @@ pipeline {
         
         stage('Setup') {
             steps {
+                // App credentials (required)
                 withCredentials([
                     string(credentialsId: "${params.ENV.toUpperCase()}_APP_ORG_ID", variable: 'APP_ORG_ID'),
                     string(credentialsId: "${params.ENV.toUpperCase()}_APP_USERNAME", variable: 'APP_USERNAME'),
@@ -60,7 +61,11 @@ pipeline {
                 withCredentials([
                     string(credentialsId: "${params.ENV.toUpperCase()}_APP_ORG_ID", variable: 'APP_ORG_ID'),
                     string(credentialsId: "${params.ENV.toUpperCase()}_APP_USERNAME", variable: 'APP_USERNAME'),
-                    string(credentialsId: "${params.ENV.toUpperCase()}_APP_PASSWORD", variable: 'APP_PASSWORD')
+                    string(credentialsId: "${params.ENV.toUpperCase()}_APP_PASSWORD", variable: 'APP_PASSWORD'),
+                    string(credentialsId: "${params.ENV.toUpperCase()}_DB_USER", variable: 'DB_USER'),
+                    string(credentialsId: "${params.ENV.toUpperCase()}_DB_PASSWORD", variable: 'DB_PASSWORD'),
+                    string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     script {
                         def testCommand = "npm run test:ci"
