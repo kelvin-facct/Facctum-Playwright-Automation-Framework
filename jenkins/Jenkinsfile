@@ -17,6 +17,7 @@ pipeline {
         PARALLEL = "${params.PARALLEL}"
         RETRY = "${params.RETRY}"
         NODE_OPTIONS = '--max-old-space-size=4096'
+        TIMESTAMP = new Date().format("yyyy-MM-dd'T'HH-mm-ss", TimeZone.getTimeZone('UTC'))
     }
     
     options {
@@ -43,6 +44,7 @@ pipeline {
                         echo "Environment: ${params.ENV}"
                         echo "Browser: ${params.BROWSER}"
                         echo "Headless: ${params.HEADLESS}"
+                        echo "Build Timestamp: ${TIMESTAMP}"
                     }
                     
                     bat 'npm ci'
@@ -73,15 +75,29 @@ pipeline {
         
         stage('Generate Report') {
             steps {
+                // Generate current report
                 bat "npx allure-commandline generate reports/${params.ENV}/allure-results -o reports/${params.ENV}/allure-report --clean"
+                
+                // Copy to history with timestamp
+                bat """
+                    if not exist "reports\\${params.ENV}\\allure-report-history\\report-${TIMESTAMP}" mkdir "reports\\${params.ENV}\\allure-report-history\\report-${TIMESTAMP}"
+                    xcopy /E /I /Y "reports\\${params.ENV}\\allure-report\\*" "reports\\${params.ENV}\\allure-report-history\\report-${TIMESTAMP}\\"
+                """
+                
+                // Generate report index
+                bat "node src/scripts/generate-report-index.js"
             }
         }
         
         stage('Archive Results') {
             steps {
-                archiveArtifacts artifacts: "reports/${params.ENV}/allure-results/**/*", allowEmptyArchive: true
+                // Archive current report
                 archiveArtifacts artifacts: "reports/${params.ENV}/allure-report/**/*", allowEmptyArchive: true
                 archiveArtifacts artifacts: "reports/${params.ENV}/cucumber-report.json", allowEmptyArchive: true
+                
+                // Archive report index
+                archiveArtifacts artifacts: "reports/${params.ENV}/report-index.html", allowEmptyArchive: true
+                archiveArtifacts artifacts: "reports/${params.ENV}/allure-report-history/**/*", allowEmptyArchive: true
             }
         }
         
@@ -97,6 +113,16 @@ pipeline {
     }
     
     post {
+        always {
+            script {
+                // Add link to report index in build description
+                currentBuild.description = """
+                    <a href='artifact/reports/${params.ENV}/report-index.html'>📊 Report History</a> | 
+                    <a href='artifact/reports/${params.ENV}/allure-report/index.html'>📋 Latest Report</a>
+                """
+            }
+        }
+        
         failure {
             archiveArtifacts artifacts: "reports/${params.ENV}/runs/**/*", allowEmptyArchive: true
         }
