@@ -17,6 +17,10 @@ pipeline {
         PARALLEL = "${params.PARALLEL}"
         RETRY = "${params.RETRY}"
         NODE_OPTIONS = '--max-old-space-size=4096'
+        // Credentials from Jenkins credential store
+        APP_ORG_ID = credentials('APP_ORG_ID')
+        APP_USERNAME = credentials('APP_USERNAME')
+        APP_PASSWORD = credentials('APP_PASSWORD')
     }
     
     options {
