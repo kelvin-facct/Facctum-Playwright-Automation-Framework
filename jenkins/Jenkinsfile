@@ -23,7 +23,6 @@ pipeline {
         timeout(time: 60, unit: 'MINUTES')
         buildDiscarder(logRotator(numToKeepStr: '20', artifactNumToKeepStr: '10'))
         timestamps()
-        ansiColor('xterm')
     }
     
     stages {
@@ -42,10 +41,7 @@ pipeline {
                     echo "Parallel Workers: ${params.PARALLEL}"
                 }
                 
-                // Install Node.js dependencies
                 bat 'npm ci'
-                
-                // Install Playwright browsers
                 bat 'npx playwright install --with-deps'
             }
         }
@@ -57,7 +53,6 @@ pipeline {
                         ? "npm run test:file ${params.FEATURE_FILE}"
                         : "npm run test:ci"
                     
-                    // Run tests - continue even if tests fail
                     catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                         bat testCommand
                     }
@@ -74,21 +69,12 @@ pipeline {
     
     post {
         always {
-            // Archive Allure results
             archiveArtifacts artifacts: "reports/${params.ENV}/allure-results/**/*", allowEmptyArchive: true
             archiveArtifacts artifacts: "reports/${params.ENV}/allure-report/**/*", allowEmptyArchive: true
             archiveArtifacts artifacts: "reports/${params.ENV}/cucumber-report.json", allowEmptyArchive: true
-            
-            // Publish Allure Report (requires Allure Jenkins Plugin)
-            allure([
-                includeProperties: false,
-                jdk: '',
-                results: [[path: "reports/${params.ENV}/allure-results"]]
-            ])
         }
         
         failure {
-            // Archive screenshots, traces, videos on failure
             archiveArtifacts artifacts: "reports/${params.ENV}/runs/**/*", allowEmptyArchive: true
         }
         
