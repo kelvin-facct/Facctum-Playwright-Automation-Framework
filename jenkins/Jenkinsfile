@@ -84,6 +84,16 @@ pipeline {
                 archiveArtifacts artifacts: "reports/${params.ENV}/cucumber-report.json", allowEmptyArchive: true
             }
         }
+        
+        stage('Publish Allure Report') {
+            steps {
+                allure([
+                    includeProperties: false,
+                    jdk: '',
+                    results: [[path: "reports/${params.ENV}/allure-results"]]
+                ])
+            }
+        }
     }
     
     post {
