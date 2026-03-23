@@ -171,7 +171,7 @@ function groupByDate(reports) {
             <div class="date-header">${formatDate(date)}</div>
             ${items.map(r => `
             <div class="report-item">
-                <a href="${r.name}/index.html" class="report-link">
+                <a href="allure-report-history/${r.name}/index.html" class="report-link">
                     <div class="report-info">
                         <div class="report-date">🕐 ${r.time || 'Unknown time'}</div>
                         <div class="report-time">Build: ${r.name}</div>
