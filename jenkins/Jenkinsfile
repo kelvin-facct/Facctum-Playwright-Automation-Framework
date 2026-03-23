@@ -17,10 +17,6 @@ pipeline {
         PARALLEL = "${params.PARALLEL}"
         RETRY = "${params.RETRY}"
         NODE_OPTIONS = '--max-old-space-size=4096'
-        // Credentials from Jenkins credential store
-        APP_ORG_ID = credentials('APP_ORG_ID')
-        APP_USERNAME = credentials('APP_USERNAME')
-        APP_PASSWORD = credentials('APP_PASSWORD')
     }
     
     options {
@@ -38,27 +34,38 @@ pipeline {
         
         stage('Setup') {
             steps {
-                script {
-                    echo "Environment: ${params.ENV}"
-                    echo "Browser: ${params.BROWSER}"
-                    echo "Headless: ${params.HEADLESS}"
-                    echo "Parallel Workers: ${params.PARALLEL}"
+                withCredentials([
+                    string(credentialsId: 'APP_ORG_ID', variable: 'APP_ORG_ID'),
+                    string(credentialsId: 'APP_USERNAME', variable: 'APP_USERNAME'),
+                    string(credentialsId: 'APP_PASSWORD', variable: 'APP_PASSWORD')
+                ]) {
+                    script {
+                        echo "Environment: ${params.ENV}"
+                        echo "Browser: ${params.BROWSER}"
+                        echo "Headless: ${params.HEADLESS}"
+                    }
+                    
+                    bat 'npm ci'
+                    bat 'npx playwright install --with-deps'
                 }
-                
-                bat 'npm ci'
-                bat 'npx playwright install --with-deps'
             }
         }
         
         stage('Run Tests') {
             steps {
-                script {
-                    def testCommand = params.FEATURE_FILE?.trim() 
-                        ? "npm run test:file ${params.FEATURE_FILE}"
-                        : "npm run test:ci"
-                    
-                    catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                        bat testCommand
+                withCredentials([
+                    string(credentialsId: 'APP_ORG_ID', variable: 'APP_ORG_ID'),
+                    string(credentialsId: 'APP_USERNAME', variable: 'APP_USERNAME'),
+                    string(credentialsId: 'APP_PASSWORD', variable: 'APP_PASSWORD')
+                ]) {
+                    script {
+                        def testCommand = params.FEATURE_FILE?.trim() 
+                            ? "npm run test:file ${params.FEATURE_FILE}"
+                            : "npm run test:ci"
+                        
+                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                            bat testCommand
+                        }
                     }
                 }
             }
@@ -69,24 +76,19 @@ pipeline {
                 bat "npx allure-commandline generate reports/${params.ENV}/allure-results -o reports/${params.ENV}/allure-report --clean"
             }
         }
+        
+        stage('Archive Results') {
+            steps {
+                archiveArtifacts artifacts: "reports/${params.ENV}/allure-results/**/*", allowEmptyArchive: true
+                archiveArtifacts artifacts: "reports/${params.ENV}/allure-report/**/*", allowEmptyArchive: true
+                archiveArtifacts artifacts: "reports/${params.ENV}/cucumber-report.json", allowEmptyArchive: true
+            }
+        }
     }
     
     post {
-        always {
-            archiveArtifacts artifacts: "reports/${params.ENV}/allure-results/**/*", allowEmptyArchive: true
-            archiveArtifacts artifacts: "reports/${params.ENV}/allure-report/**/*", allowEmptyArchive: true
-            archiveArtifacts artifacts: "reports/${params.ENV}/cucumber-report.json", allowEmptyArchive: true
-        }
-        
         failure {
             archiveArtifacts artifacts: "reports/${params.ENV}/runs/**/*", allowEmptyArchive: true
-        }
-        
-        cleanup {
-            cleanWs(cleanWhenNotBuilt: false,
-                    deleteDirs: true,
-                    disableDeferredWipeout: true,
-                    notFailBuild: true)
         }
     }
 }
