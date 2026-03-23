@@ -84,8 +84,8 @@ pipeline {
                     xcopy /E /I /Y "reports\\${params.ENV}\\allure-report\\*" "reports\\${params.ENV}\\allure-report-history\\report-${TIMESTAMP}\\"
                 """
                 
-                // Generate report index
-                bat "node src/scripts/generate-report-index.js"
+                // Generate report index with Jenkins build info
+                bat "set JENKINS_URL=${env.JENKINS_URL} && set JOB_NAME=${env.JOB_NAME} && set BUILD_NUMBER=${env.BUILD_NUMBER} && node src/scripts/generate-report-index.js"
             }
         }
         
@@ -95,9 +95,9 @@ pipeline {
                 archiveArtifacts artifacts: "reports/${params.ENV}/allure-report/**/*", allowEmptyArchive: true
                 archiveArtifacts artifacts: "reports/${params.ENV}/cucumber-report.json", allowEmptyArchive: true
                 
-                // Archive report index
+                // Archive report index and history
                 archiveArtifacts artifacts: "reports/${params.ENV}/report-index.html", allowEmptyArchive: true
-                archiveArtifacts artifacts: "reports/${params.ENV}/allure-report-history/**/*", allowEmptyArchive: true
+                archiveArtifacts artifacts: "reports/${params.ENV}/build-history.json", allowEmptyArchive: true
             }
         }
         
