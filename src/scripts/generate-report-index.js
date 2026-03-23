@@ -6,8 +6,8 @@ const fs = require('fs');
 const path = require('path');
 
 const env = process.env.ENV || 'qa';
-const jobName = process.env.JOB_NAME || 'Facctum-Platform';
 const jenkinsUrl = process.env.JENKINS_URL || 'http://localhost:8080';
+const jobName = process.env.JOB_NAME || 'Facctum-Platform';
 const buildNumber = process.env.BUILD_NUMBER || '1';
 const outputFile = `reports/${env}/report-index.html`;
 

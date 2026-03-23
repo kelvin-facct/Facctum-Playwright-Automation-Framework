@@ -85,7 +85,7 @@ pipeline {
                 """
                 
                 // Generate report index with Jenkins build info
-                bat "set JENKINS_URL=${env.JENKINS_URL} && set JOB_NAME=${env.JOB_NAME} && set BUILD_NUMBER=${env.BUILD_NUMBER} && node src/scripts/generate-report-index.js"
+                bat "node src/scripts/generate-report-index.js"
             }
         }
         
