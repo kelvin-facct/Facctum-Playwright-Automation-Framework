@@ -35,9 +35,9 @@ pipeline {
         stage('Setup') {
             steps {
                 withCredentials([
-                    string(credentialsId: 'APP_ORG_ID', variable: 'APP_ORG_ID'),
-                    string(credentialsId: 'APP_USERNAME', variable: 'APP_USERNAME'),
-                    string(credentialsId: 'APP_PASSWORD', variable: 'APP_PASSWORD')
+                    string(credentialsId: "${params.ENV.toUpperCase()}_APP_ORG_ID", variable: 'APP_ORG_ID'),
+                    string(credentialsId: "${params.ENV.toUpperCase()}_APP_USERNAME", variable: 'APP_USERNAME'),
+                    string(credentialsId: "${params.ENV.toUpperCase()}_APP_PASSWORD", variable: 'APP_PASSWORD')
                 ]) {
                     script {
                         echo "Environment: ${params.ENV}"
@@ -54,9 +54,9 @@ pipeline {
         stage('Run Tests') {
             steps {
                 withCredentials([
-                    string(credentialsId: 'APP_ORG_ID', variable: 'APP_ORG_ID'),
-                    string(credentialsId: 'APP_USERNAME', variable: 'APP_USERNAME'),
-                    string(credentialsId: 'APP_PASSWORD', variable: 'APP_PASSWORD')
+                    string(credentialsId: "${params.ENV.toUpperCase()}_APP_ORG_ID", variable: 'APP_ORG_ID'),
+                    string(credentialsId: "${params.ENV.toUpperCase()}_APP_USERNAME", variable: 'APP_USERNAME'),
+                    string(credentialsId: "${params.ENV.toUpperCase()}_APP_PASSWORD", variable: 'APP_PASSWORD')
                 ]) {
                     script {
                         def testCommand = params.FEATURE_FILE?.trim() 
