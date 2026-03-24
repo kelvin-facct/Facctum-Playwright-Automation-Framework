@@ -25,8 +25,6 @@ interface EnvironmentConfig {
   RECORD_VIDEO: boolean;
   PARALLEL: number;
   RETRY: number;
-  STEP_RETRY: number;
-  STEP_RETRY_DELAY: number;
   VALIDATE_SESSION: boolean;
   DB_HOST: string;
   DB_PORT: number;
@@ -114,8 +112,6 @@ function loadConfig(): EnvironmentConfig {
     RECORD_VIDEO: getBool("RECORD_VIDEO", true),
     PARALLEL: getInt("PARALLEL", 0),
     RETRY: getInt("RETRY", 0),
-    STEP_RETRY: getInt("STEP_RETRY", 2),
-    STEP_RETRY_DELAY: getInt("STEP_RETRY_DELAY", 1000),
     VALIDATE_SESSION: getBool("VALIDATE_SESSION", true),
     DB_HOST: get("DB_HOST"),
     DB_PORT: getInt("DB_PORT", 5432),
