@@ -119,11 +119,11 @@ export class AuthHelper {
     try {
       logger.info("Validating session...");
       
-      // Navigate to base URL
-      await page.goto(EnvConfig.BASE_URL, { waitUntil: "domcontentloaded", timeout: 15000 });
+      // Navigate to base URL with longer timeout for slow environments
+      await page.goto(EnvConfig.BASE_URL, { waitUntil: "domcontentloaded", timeout: 30000 });
       
       // Check if we landed on the dashboard (session valid)
-      const dashboardVisible = await page.locator("#facctumThemeProvider").isVisible({ timeout: 5000 }).catch(() => false);
+      const dashboardVisible = await page.locator("#facctumThemeProvider").isVisible({ timeout: 10000 }).catch(() => false);
       
       if (dashboardVisible) {
         logger.info("Session is valid - dashboard loaded");
@@ -131,7 +131,7 @@ export class AuthHelper {
       }
       
       // Check if login button is visible (session expired)
-      const loginButtonVisible = await page.getByRole("button", { name: "LOG IN" }).isVisible({ timeout: 3000 }).catch(() => false);
+      const loginButtonVisible = await page.getByRole("button", { name: "LOG IN" }).isVisible({ timeout: 5000 }).catch(() => false);
       
       if (loginButtonVisible) {
         logger.warn("Session expired - login page detected");
@@ -139,7 +139,7 @@ export class AuthHelper {
       }
       
       // Check for org ID input (partially through login flow)
-      const orgIdVisible = await page.getByRole("textbox", { name: "Organisation ID" }).isVisible({ timeout: 2000 }).catch(() => false);
+      const orgIdVisible = await page.getByRole("textbox", { name: "Organisation ID" }).isVisible({ timeout: 3000 }).catch(() => false);
       
       if (orgIdVisible) {
         logger.warn("Session expired - on organisation ID page");
