@@ -83,6 +83,7 @@ Authentication behavior:
 - Scenarios within the same test run reuse saved session
 - Auth state is browser-specific (e.g., `state-chromium.json`)
 - Auth state is automatically cleared after each test run completes (ensures fresh login on next run)
+- Session is validated before each scenario; if expired, automatic re-authentication occurs
 
 Required credentials in `.env.secrets`:
 - `APP_ORG_ID` - Organisation ID
@@ -90,7 +91,7 @@ Required credentials in `.env.secrets`:
 - `APP_PASSWORD` - Password
 
 ### AuthHelper (authHelper.ts)
-Reusable authentication functions for login operations:
+Reusable authentication functions for login operations.
 
 ```typescript
 import { AuthHelper } from "../helpers/authHelper";
@@ -110,18 +111,40 @@ await AuthHelper.switchUser(context, page, {
   email: "other@example.com",
   password: "password456"
 });
+
+// Validate session and re-authenticate if expired (used in Before hook)
+const wasRefreshed = await AuthHelper.ensureValidSession(page, context, authStatePath);
 ```
 
 Key methods:
-- `login(page, credentials)` - Performs login on a given page
+- `login(page, credentials)` - Performs login with email/password
 - `loginAndSaveState(authStatePath, credentials?)` - Logs in and saves auth state for session reuse
 - `switchUser(context, page, credentials)` - Clears session and logs in as a different user
+- `validateSession(page)` - Checks if current session is still active
+- `ensureValidSession(page, context, authStatePath)` - Validates session and re-authenticates if expired
 
 ### Database Access
 - `DatabaseHelper` class in `src/helpers/database.ts`
 - Supports AWS RDS with IAM authentication or standard password auth
 - Create instances directly: `new DatabaseHelper()`
 - Configure via `DB_*` environment variables
+
+```typescript
+import { DatabaseHelper } from "../helpers/database";
+
+const db = new DatabaseHelper();
+
+// Manual connection management
+await db.connect();
+const result1 = await db.query('SELECT * FROM table1');
+const result2 = await db.query('SELECT * FROM table2');
+await db.disconnect();
+```
+
+Key methods:
+- `connect()` / `disconnect()` - Manual connection management
+- `query(sql, params?)` - Execute query (requires manual connect/disconnect)
+- `isConnected()` - Check if connection is active
 
 ### TestDataStore (testDataStore.ts)
 Persists data across scenarios using a JSON file. Thread-safe for parallel execution using file locking. Useful for sharing data between scenarios.

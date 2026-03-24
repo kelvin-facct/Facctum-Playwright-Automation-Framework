@@ -395,6 +395,12 @@ Before(async function (this: CustomWorld, scenario) {
   // Store attempt number for After hook
   this.scenarioContext.set("retryAttempt", attempt);
 
+  // Validate session and re-authenticate if expired
+  const sessionRefreshed = await AuthHelper.ensureValidSession(this.page, this.context, authStatePath);
+  if (sessionRefreshed) {
+    logger.info("Session was refreshed - continuing with new authentication");
+  }
+
   await this.context.tracing.start({
     screenshots: true,
     snapshots: true,

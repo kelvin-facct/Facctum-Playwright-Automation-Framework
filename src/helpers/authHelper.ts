@@ -1,9 +1,15 @@
-import { BrowserContext, Page } from "playwright";
+import { Browser, BrowserContext, Page } from "playwright";
 import { BrowserManager } from "./browserManager";
 import { EnvConfig } from "../config/env";
 import { logger } from "../utils/logger";
 import * as fs from "fs/promises";
 import * as path from "path";
+
+/** Result of session validation */
+export interface SessionValidationResult {
+  isValid: boolean;
+  reason?: string;
+}
 
 export interface LoginCredentials {
   orgId?: string;
@@ -101,5 +107,96 @@ export class AuthHelper {
     
     // Perform fresh login
     await this.login(page, credentials);
+  }
+
+  /**
+   * Validates if the current session is still active.
+   * Navigates to the base URL and checks if redirected to login or dashboard loads.
+   * @param page - Playwright Page instance
+   * @returns SessionValidationResult indicating if session is valid
+   */
+  static async validateSession(page: Page): Promise<SessionValidationResult> {
+    try {
+      logger.info("Validating session...");
+      
+      // Navigate to base URL
+      await page.goto(EnvConfig.BASE_URL, { waitUntil: "domcontentloaded", timeout: 15000 });
+      
+      // Check if we landed on the dashboard (session valid)
+      const dashboardVisible = await page.locator("#facctumThemeProvider").isVisible({ timeout: 5000 }).catch(() => false);
+      
+      if (dashboardVisible) {
+        logger.info("Session is valid - dashboard loaded");
+        return { isValid: true };
+      }
+      
+      // Check if login button is visible (session expired)
+      const loginButtonVisible = await page.getByRole("button", { name: "LOG IN" }).isVisible({ timeout: 3000 }).catch(() => false);
+      
+      if (loginButtonVisible) {
+        logger.warn("Session expired - login page detected");
+        return { isValid: false, reason: "Session expired - redirected to login page" };
+      }
+      
+      // Check for org ID input (partially through login flow)
+      const orgIdVisible = await page.getByRole("textbox", { name: "Organisation ID" }).isVisible({ timeout: 2000 }).catch(() => false);
+      
+      if (orgIdVisible) {
+        logger.warn("Session expired - on organisation ID page");
+        return { isValid: false, reason: "Session expired - on login flow" };
+      }
+      
+      // Unknown state - assume invalid to be safe
+      logger.warn("Session state unknown - treating as invalid");
+      return { isValid: false, reason: "Unknown session state" };
+      
+    } catch (error) {
+      logger.error(`Session validation failed: ${error}`);
+      return { isValid: false, reason: `Validation error: ${error}` };
+    }
+  }
+
+  /**
+   * Validates session and re-authenticates if expired.
+   * Deletes stale auth state file and performs fresh login.
+   * @param page - Playwright Page instance
+   * @param context - Browser context for saving new auth state
+   * @param authStatePath - Path to auth state file
+   * @returns true if session was refreshed, false if already valid
+   */
+  static async ensureValidSession(
+    page: Page,
+    context: BrowserContext,
+    authStatePath: string
+  ): Promise<boolean> {
+    const validation = await this.validateSession(page);
+    
+    if (validation.isValid) {
+      return false; // No refresh needed
+    }
+    
+    logger.info(`Re-authenticating: ${validation.reason}`);
+    
+    // Delete stale auth state
+    try {
+      await fs.unlink(authStatePath);
+      logger.info("Deleted stale auth state file");
+    } catch {
+      // File may not exist
+    }
+    
+    // Perform fresh login on current page
+    await this.login(page, {
+      email: EnvConfig.USERNAME,
+      password: EnvConfig.PASSWORD,
+      orgId: EnvConfig.ORG_ID
+    });
+    
+    // Save new auth state
+    await fs.mkdir(path.dirname(authStatePath), { recursive: true });
+    await context.storageState({ path: authStatePath });
+    logger.info("New auth state saved after re-authentication");
+    
+    return true; // Session was refreshed
   }
 }

@@ -2,7 +2,7 @@ import { Given, When, Then } from "@cucumber/cucumber";
 import { CustomWorld } from "../world/customWorld";
 import { expect } from "@playwright/test";
 import { EnvConfig } from "../config/env";
-import{TestDataStore} from "../helpers/testDataStore";
+import { TestDataStore } from "../helpers/testDataStore";
 
 // ==================== Commercial List Steps ====================
 
@@ -12,7 +12,7 @@ Given("user is on landing page", async function (this: CustomWorld) {
 });
 
 When("user clicks on list management", async function (this: CustomWorld) {
-const dashboardPage = this.pageManager.getFacctumDashboardPage();
+  const dashboardPage = this.pageManager.getFacctumDashboardPage();
   await dashboardPage.navigateToListManagement();
   await TestDataStore.set("createdCaseId", "CAS123456");
   const caseId = TestDataStore.get<string>("createdCaseId");
