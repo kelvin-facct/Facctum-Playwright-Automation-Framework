@@ -1,17 +1,35 @@
-// Read environments dynamically from environments.json
-def getEnvironments() {
-    def configFile = readFile('src/config/environments.json')
-    def config = new groovy.json.JsonSlurper().parseText(configFile)
-    return config.keySet().findAll { it != '_defaults' }.join('\n')
-}
-
 pipeline {
     agent any
     
     parameters {
-        // ENV choices are loaded dynamically from environments.json
-        // First build uses fallback, subsequent builds use dynamic list
-        choice(name: 'ENV', choices: ['qa', 'dev', 'stage', 'uat', 'prod'], description: 'Target environment (from environments.json)')
+        // Dynamic environment selection from environments.json using Active Choices plugin
+        activeChoice(
+            name: 'ENV',
+            description: 'Target environment (dynamically loaded from environments.json)',
+            choiceType: 'PT_SINGLE_SELECT',
+            script: [
+                $class: 'GroovyScript',
+                script: [
+                    classpath: [],
+                    sandbox: true,
+                    script: '''
+                        import groovy.json.JsonSlurper
+                        
+                        def configPath = new File("${WORKSPACE}/src/config/environments.json")
+                        if (configPath.exists()) {
+                            def config = new JsonSlurper().parseText(configPath.text)
+                            return config.keySet().findAll { it != '_defaults' }.toList()
+                        }
+                        return ['qa', 'dev', 'stage', 'uat', 'prod']
+                    '''
+                ],
+                fallbackScript: [
+                    classpath: [],
+                    sandbox: true,
+                    script: "return ['qa', 'dev', 'stage', 'uat', 'prod']"
+                ]
+            ]
+        )
         choice(name: 'BROWSER', choices: ['chromium', 'firefox', 'webkit'], description: 'Browser to run tests')
         booleanParam(name: 'HEADLESS', defaultValue: true, description: 'Run in headless mode')
         string(name: 'PARALLEL', defaultValue: '0', description: 'Number of parallel workers (0 = sequential)')
@@ -47,17 +65,11 @@ pipeline {
         stage('Setup') {
             steps {
                 script {
-                    // Validate selected environment exists in environments.json
-                    def configFile = readFile('src/config/environments.json')
-                    def config = new groovy.json.JsonSlurper().parseText(configFile)
-                    def availableEnvs = config.keySet().findAll { it != '_defaults' }
-                    
-                    if (!availableEnvs.contains(params.ENV)) {
-                        error "Environment '${params.ENV}' not found in environments.json. Available: ${availableEnvs.join(', ')}"
-                    }
-                    
-                    echo "Available environments: ${availableEnvs.join(', ')}"
+                    // Log selected environment
                     echo "Selected environment: ${params.ENV}"
+                    echo "Browser: ${params.BROWSER}"
+                    echo "Headless: ${params.HEADLESS}"
+                    echo "Build Timestamp: ${TIMESTAMP}"
                 }
                 
                 // App credentials (required)
@@ -66,13 +78,6 @@ pipeline {
                     string(credentialsId: "${params.ENV.toUpperCase()}_APP_USERNAME", variable: 'APP_USERNAME'),
                     string(credentialsId: "${params.ENV.toUpperCase()}_APP_PASSWORD", variable: 'APP_PASSWORD')
                 ]) {
-                    script {
-                        echo "Environment: ${params.ENV}"
-                        echo "Browser: ${params.BROWSER}"
-                        echo "Headless: ${params.HEADLESS}"
-                        echo "Build Timestamp: ${TIMESTAMP}"
-                    }
-                    
                     bat 'npm ci'
                     bat 'npx playwright install --with-deps'
                 }

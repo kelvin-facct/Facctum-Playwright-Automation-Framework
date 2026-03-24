@@ -221,40 +221,31 @@ npx ts-node src/scripts/test-dbQuery.ts --full
 Pre-built Gherkin steps for authentication in `src/stepDefinitions/login.steps.ts`:
 
 ```gherkin
-# Basic login flow
+# Navigate to landing page
 Given user navigates to the landing page
-When user logs in with valid credentials
-Then user should see their name on the dashboard
 
-# Login with inline credentials
-Given user logs in with email "user@example.com" and password "Pass123"
-
-# Login with data table (for switching users mid-scenario)
-Given user logs in with credentials:
-  | orgId    | my-org-id           |
-  | email    | user@example.com    |
-  | password | MyPassword123       |
-```
-
-Note: The data table login clears the existing session and performs a fresh login, useful for multi-user scenarios.
-
-### Login Step Definitions
-Pre-built Gherkin steps for authentication in `src/stepDefinitions/login.steps.ts`:
-
-```gherkin
 # Default login (uses .env.secrets credentials)
-Given user navigates to the landing page
 When user logs in with valid credentials
-Then user should see their name on the dashboard
 
 # Dynamic login - inline format (uses default orgId from config)
-Given user logs in with email "analyst@facctum.com" and password "Pass123"
+When user logs in with email "analyst@facctum.com" and password "Pass123"
 
-# Dynamic login - data table format (with optional custom orgId)
-Given user logs in with credentials:
+# Dynamic login - data table format (for switching users mid-scenario)
+When user logs in with credentials:
   | orgId    | different-org       |
   | email    | admin@facctum.com   |
   | password | AdminPass123        |
+
+# Verify login success
+Then user should see their name on the dashboard
+Then user should be on the dashboard
+
+# Verify login failure
+Then user should see login error "Invalid credentials"
+
+# Logout
+When user clicks the logout button
+Then user should be redirected to the login page
 ```
 
 Note: Scenarios that don't include a login step will automatically use the cached auth state from `.env.secrets` credentials (set up in BeforeAll hook).
@@ -263,19 +254,23 @@ Note: Scenarios that don't include a login step will automatically use the cache
 Pre-built Gherkin steps for database operations in `src/stepDefinitions/database.steps.ts`:
 
 ```gherkin
-# Connection
+# Connection management
 Given I connect to the database
+When I disconnect from the database
 
 # User queries
 When I query for user "john.doe"
-Then the user should have status "active"
 Then the user should exist in the database
 Then the user should not exist in the database
+Then the user should have status "active"
 
 # Case queries
 Then case "CAS2607607143423" should exist in the database
+Then case "CAS2607607143423" should not exist in the database
 
 # Generic queries
 When I execute query "SELECT * FROM table"
 Then the query should return {int} row(s)
 ```
+
+Note: Database connection must be established with `Given I connect to the database` before running queries. Connection is automatically closed in the After hook.

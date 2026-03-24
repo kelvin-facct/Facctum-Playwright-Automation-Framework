@@ -85,9 +85,24 @@ export class TestDataStore {
 
   /**
    * Retrieve a value by key.
+   * Note: Uses synchronous read. For consistency during parallel writes,
+   * consider using getAsync() or ensure writes are complete before reading.
    */
   static get<T>(key: string): T | undefined {
     return this.getData()[key];
+  }
+
+  /**
+   * Retrieve a value by key with lock (thread-safe).
+   * Use this when reading during active parallel writes.
+   */
+  static async getAsync<T>(key: string): Promise<T | undefined> {
+    await this.acquireLock();
+    try {
+      return this.getData()[key];
+    } finally {
+      this.releaseLock();
+    }
   }
 
   /**

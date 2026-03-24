@@ -1,8 +1,8 @@
 import { Given, When, Then } from "@cucumber/cucumber";
 import { CustomWorld } from "../world/customWorld";
-import { expect } from "@playwright/test";
 import { EnvConfig } from "../config/env";
 import { TestDataStore } from "../helpers/testDataStore";
+import * as assert from "assert";
 
 // ==================== Commercial List Steps ====================
 
@@ -20,7 +20,9 @@ When("user clicks on list management", async function (this: CustomWorld) {
 });
 
 Then("user should see {string} in the end of url", async function (this: CustomWorld, urlPart: string) {
-  await expect(this.page).toHaveURL(new RegExp(`${urlPart}$`));
+  await this.page.waitForURL(new RegExp(`${urlPart}$`));
+  const currentUrl = this.page.url();
+  assert.ok(currentUrl.endsWith(urlPart), `Expected URL to end with "${urlPart}" but got "${currentUrl}"`);
 });
 
 When("user click on {string} and then clicks on {string}", async function (this: CustomWorld, menuItem: string, subMenuItem: string) {
@@ -32,5 +34,7 @@ When("user click on {string} and then clicks on {string}", async function (this:
 });
 
 Then("Commercial list page should open", async function (this: CustomWorld) {
-  await expect(this.page).toHaveURL(/commercial/i);
+  await this.page.waitForURL(/commercial/i);
+  const currentUrl = this.page.url();
+  assert.ok(/commercial/i.test(currentUrl), `Expected URL to contain "commercial" but got "${currentUrl}"`);
 });
