@@ -28,6 +28,7 @@ jobs:
       env:
         ENV: qa
         HEADLESS: true
+        VALIDATE_SESSION: true
     
     - name: Generate Allure Report
       if: always()
