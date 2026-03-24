@@ -42,7 +42,7 @@ jobs:
       with:
         name: allure-results
         path: reports/qa/allure-results/
-        retention-days: 30
+        retention-days: 7
     
     - name: Upload Allure Report
       if: always()
@@ -50,7 +50,7 @@ jobs:
       with:
         name: allure-report
         path: reports/qa/allure-report/
-        retention-days: 30
+        retention-days: 7
     
     - name: Upload Screenshots, Traces & Videos
       if: failure()
