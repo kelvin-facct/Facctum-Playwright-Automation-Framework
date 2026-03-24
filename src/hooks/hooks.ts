@@ -6,6 +6,7 @@ import { AuthHelper } from "../helpers/authHelper";
 import { logger } from "../utils/logger";
 import { PageManager } from "../pages/PageManager";
 import { ScenarioContext } from "../helpers/scenarioContext";
+import { StepRetryTracker, getStepRetryConfig } from "../helpers/stepRetry";
 import { EnvConfig } from "../config/env";
 import { Browser } from "playwright";
 import { TestDataStore } from "../helpers/testDataStore";
@@ -151,13 +152,16 @@ async function ensureReportDirs(): Promise<void> {
  * Writes environment info to Allure results for display in report.
  */
 async function writeAllureEnvironment(): Promise<void> {
+  const stepRetryConfig = getStepRetryConfig();
   const envProps = [
     `Environment=${env.toUpperCase()}`,
     `Browser=${browserType}`,
     `Base.URL=${EnvConfig.BASE_URL}`,
     `Headless=${EnvConfig.HEADLESS}`,
     `Parallel=${EnvConfig.PARALLEL}`,
-    `Retry=${EnvConfig.RETRY}`,
+    `Scenario.Retry=${EnvConfig.RETRY}`,
+    `Step.Retry=${stepRetryConfig.maxStepRetries > 0 ? stepRetryConfig.maxStepRetries : "disabled"}`,
+    `Step.Retry.Delay=${stepRetryConfig.retryDelayMs}ms`,
     `Node.Version=${process.version}`,
     `Platform=${process.platform}`,
     `Timestamp=${new Date().toISOString()}`
@@ -233,6 +237,18 @@ async function writeAllureCategories(): Promise<void> {
       description: "Framework or environment setup issues",
       matchedStatuses: ["broken"],
       messageRegex: ".*hook.*|.*before.*|.*after.*|.*setup.*"
+    },
+    {
+      name: "Flaky Tests (Step Retry)",
+      description: "Tests that passed after step-level retry",
+      matchedStatuses: ["passed"],
+      messageRegex: ".*Step retry.*|.*step retries occurred.*"
+    },
+    {
+      name: "Flaky Tests (Scenario Retry)",
+      description: "Tests that passed after scenario-level retry",
+      matchedStatuses: ["passed"],
+      messageRegex: ".*Scenario retry.*|.*passed on retry attempt.*"
     },
     {
       name: "Skipped Tests",
@@ -394,6 +410,7 @@ Before(async function (this: CustomWorld, scenario) {
   this.page = await this.context.newPage();
   this.pageManager = new PageManager(this.page);
   this.scenarioContext = new ScenarioContext();
+  this.stepRetryTracker = new StepRetryTracker();
   await this.attach(`Context created with auth state: ${authStatePath}`, "text/plain");
   
   // Store attempt number for After hook
@@ -406,6 +423,13 @@ Before(async function (this: CustomWorld, scenario) {
     sources: true
   });
   await this.attach("Tracing started", "text/plain");
+
+  // Log step retry configuration
+  const stepRetryConfig = getStepRetryConfig();
+  await this.attach(
+    `Step retry: ${stepRetryConfig.maxStepRetries > 0 ? `enabled (max ${stepRetryConfig.maxStepRetries} attempts, ${stepRetryConfig.retryDelayMs}ms delay)` : "disabled"}`,
+    "text/plain"
+  );
 
   // Validate session and re-authenticate if expired (configurable via VALIDATE_SESSION)
   if (EnvConfig.VALIDATE_SESSION) {
@@ -444,10 +468,31 @@ After(async function (this: CustomWorld, scenario) {
   const attempt = this.scenarioContext?.get("retryAttempt") || 1;
   let videoPath: string | undefined;
 
-  // Add retry information to logs
+  // Report step retry information to Allure (always, even if scenario failed)
+  if (this.stepRetryTracker) {
+    const retriedSteps = this.stepRetryTracker.getRetryInfo();
+    if (retriedSteps.length > 0 || this.stepRetryTracker.hasRetries()) {
+      const retrySummary = this.stepRetryTracker.generateSummary();
+      await this.attach(retrySummary, "text/plain");
+      logger.info(`Step retries in scenario: ${this.stepRetryTracker.getTotalRetries()}`);
+      
+      // Add a marker for Allure categorization
+      if (!isFailed) {
+        await this.attach("Step retry: Test passed after step retries occurred", "text/plain");
+      } else {
+        await this.attach("Step retry: Test failed despite step retries", "text/plain");
+      }
+    }
+  }
+
+  // Add retry information to logs and Allure
   if (attempt > 1) {
     if (!isFailed) {
-      logger.info(`Scenario passed on retry attempt ${attempt}: ${scenarioName}`);
+      const msg = `Scenario retry: passed on retry attempt ${attempt}`;
+      logger.info(`${msg}: ${scenarioName}`);
+      await this.attach(msg, "text/plain");
+    } else {
+      await this.attach(`Scenario retry: failed on attempt ${attempt}`, "text/plain");
     }
   }
 
@@ -498,6 +543,11 @@ After(async function (this: CustomWorld, scenario) {
   } catch (error) {
     logger.error(`Error in After Hook: ${error}`);
   } finally {
+    // Cleanup step retry tracker
+    if (this.stepRetryTracker) {
+      this.stepRetryTracker.clear();
+    }
+
     // Cleanup resources
     try {
       if (this.closeDb) {

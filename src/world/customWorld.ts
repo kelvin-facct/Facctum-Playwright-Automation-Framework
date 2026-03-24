@@ -3,6 +3,7 @@ import { Browser, BrowserContext, Page } from "playwright";
 import { PageManager } from "../pages/PageManager";
 import { ScenarioContext } from "../helpers/scenarioContext";
 import { DatabaseHelper } from "../helpers/database";
+import { StepRetryTracker } from "../helpers/stepRetry";
 
 /**
  * CustomWorld - Cucumber World class that holds shared state for each scenario.
@@ -11,6 +12,7 @@ import { DatabaseHelper } from "../helpers/database";
  * - Browser, context, and page instances
  * - PageManager for accessing page objects
  * - ScenarioContext for sharing data between steps
+ * - StepRetryTracker for tracking step-level retries
  * - DatabaseHelper for database operations
  * - Attach function for adding attachments to reports
  */
@@ -29,6 +31,9 @@ export class CustomWorld {
 
   /** ScenarioContext for sharing data between steps within a scenario */
   scenarioContext!: ScenarioContext;
+
+  /** StepRetryTracker for tracking step-level retries within a scenario */
+  stepRetryTracker!: StepRetryTracker;
 
   /** DatabaseHelper for database operations (lazy-initialized) */
   private _db: DatabaseHelper | null = null;

@@ -33,7 +33,8 @@ pipeline {
         choice(name: 'BROWSER', choices: ['chromium', 'firefox', 'webkit'], description: 'Browser to run tests')
         booleanParam(name: 'HEADLESS', defaultValue: true, description: 'Run in headless mode')
         string(name: 'PARALLEL', defaultValue: '0', description: 'Number of parallel workers (0 = sequential)')
-        string(name: 'RETRY', defaultValue: '1', description: 'Number of retry attempts for failed tests')
+        string(name: 'RETRY', defaultValue: '1', description: 'Number of retry attempts for failed scenarios')
+        string(name: 'STEP_RETRY', defaultValue: '2', description: 'Number of retry attempts for failed steps (0 = disabled)')
         string(name: 'FEATURE_FILE', defaultValue: '', description: 'Specific feature file to run (leave empty for all)')
         string(name: 'TAGS', defaultValue: '', description: 'Cucumber tags to run (e.g., @smoke, @regression, "not @skip")')
         booleanParam(name: 'VALIDATE_SESSION', defaultValue: true, description: 'Validate session before each scenario (disable to save ~3-5s per test)')
@@ -45,6 +46,7 @@ pipeline {
         HEADLESS = "${params.HEADLESS}"
         PARALLEL = "${params.PARALLEL}"
         RETRY = "${params.RETRY}"
+        STEP_RETRY = "${params.STEP_RETRY}"
         TAGS = "${params.TAGS}"
         VALIDATE_SESSION = "${params.VALIDATE_SESSION}"
         NODE_OPTIONS = '--max-old-space-size=4096'
@@ -71,6 +73,8 @@ pipeline {
                     echo "Selected environment: ${params.ENV}"
                     echo "Browser: ${params.BROWSER}"
                     echo "Headless: ${params.HEADLESS}"
+                    echo "Scenario Retry: ${params.RETRY}"
+                    echo "Step Retry: ${params.STEP_RETRY}"
                     echo "Build Timestamp: ${TIMESTAMP}"
                 }
                 

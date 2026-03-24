@@ -25,6 +25,7 @@ src/
 │   ├── dbQuery.ts            # Database queries with auto SSM tunnel management
 │   ├── playwrightActions.ts  # Wrapper for common Playwright operations
 │   ├── scenarioContext.ts    # Cross-step data sharing
+│   ├── stepRetry.ts          # Step-level retry logic with tracking
 │   └── testDataStore.ts      # Persist data across scenarios via JSON file
 │
 ├── hooks/            # Cucumber hooks (Before/After)
@@ -182,6 +183,48 @@ Key methods:
 - `clear()` - Delete all stored data and lock file
 
 Data is stored in `reports/test-data.json` and should be cleared in the AfterAll hook to ensure clean state between test runs. Use namespaced keys to avoid conflicts in parallel execution: `"feature.keyName"`.
+
+### Step Retry (stepRetry.ts)
+Provides step-level retry logic for flaky steps, with tracking for Allure reporting.
+
+```typescript
+import { executeWithRetry, StepRetryTracker } from "../helpers/stepRetry";
+
+// Create a tracker (typically stored in CustomWorld)
+const tracker = new StepRetryTracker();
+
+// Execute a step with automatic retry
+const result = await executeWithRetry(
+  async () => { await page.click("#submit"); },
+  "click submit button",
+  tracker
+);
+
+// Check result
+if (!result.success) {
+  throw result.lastError;
+}
+
+// Custom retry config
+const result = await executeWithRetry(
+  async () => { await page.waitForSelector(".loaded"); },
+  "wait for page load",
+  tracker,
+  { maxStepRetries: 3, retryDelayMs: 2000 }
+);
+
+// Generate summary for Allure attachment
+const summary = tracker.generateSummary();
+```
+
+Key exports:
+- `executeWithRetry(stepFn, stepName, tracker, config?)` - Execute step with retry logic
+- `StepRetryTracker` - Tracks retry attempts for reporting
+- `getStepRetryConfig()` - Get current retry configuration
+
+Environment variables:
+- `STEP_RETRY` - Max retries per step (default: 2, set to 0 to disable)
+- `STEP_RETRY_DELAY` - Delay between retries in ms (default: 1000)
 
 ### Database Queries with Auto-Tunnel (dbQuery.ts)
 For local development requiring SSM tunnel access to RDS:

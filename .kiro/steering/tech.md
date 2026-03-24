@@ -74,6 +74,8 @@ Report locations:
 - `PARALLEL` - Number of parallel workers (0 = sequential)
 - `HEADLESS` - Run headless (true/false)
 - `VALIDATE_SESSION` - Validate session before each scenario (true/false, default: true)
+- `STEP_RETRY` - Max step-level retries before failing (default: 2, set to 0 to disable)
+- `STEP_RETRY_DELAY` - Delay between step retries in ms (default: 1000)
 
 ### Database
 ```bash

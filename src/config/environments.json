@@ -1,10 +1,12 @@
 {
   "_defaults": {
     "HEADLESS": false,
-    "TIMEOUT": 60000,
+    "TIMEOUT": 15000,
     "EXTENDED_TIMEOUT": 60000,
     "PARALLEL": 0,
     "RETRY": 1,
+    "STEP_RETRY": 1,
+    "STEP_RETRY_DELAY": 1000,
     "RECORD_VIDEO": true,
     "DB_PORT": 5432,
     "AWS_REGION": "us-east-1",
