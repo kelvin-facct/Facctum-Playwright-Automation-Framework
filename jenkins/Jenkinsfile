@@ -1,8 +1,17 @@
+// Read environments dynamically from environments.json
+def getEnvironments() {
+    def configFile = readFile('src/config/environments.json')
+    def config = new groovy.json.JsonSlurper().parseText(configFile)
+    return config.keySet().findAll { it != '_defaults' }.join('\n')
+}
+
 pipeline {
     agent any
     
     parameters {
-        choice(name: 'ENV', choices: ['qa', 'dev', 'stage', 'uat'], description: 'Target environment')
+        // ENV choices are loaded dynamically from environments.json
+        // First build uses fallback, subsequent builds use dynamic list
+        choice(name: 'ENV', choices: ['qa', 'dev', 'stage', 'uat', 'prod'], description: 'Target environment (from environments.json)')
         choice(name: 'BROWSER', choices: ['chromium', 'firefox', 'webkit'], description: 'Browser to run tests')
         booleanParam(name: 'HEADLESS', defaultValue: true, description: 'Run in headless mode')
         string(name: 'PARALLEL', defaultValue: '0', description: 'Number of parallel workers (0 = sequential)')
@@ -37,6 +46,20 @@ pipeline {
         
         stage('Setup') {
             steps {
+                script {
+                    // Validate selected environment exists in environments.json
+                    def configFile = readFile('src/config/environments.json')
+                    def config = new groovy.json.JsonSlurper().parseText(configFile)
+                    def availableEnvs = config.keySet().findAll { it != '_defaults' }
+                    
+                    if (!availableEnvs.contains(params.ENV)) {
+                        error "Environment '${params.ENV}' not found in environments.json. Available: ${availableEnvs.join(', ')}"
+                    }
+                    
+                    echo "Available environments: ${availableEnvs.join(', ')}"
+                    echo "Selected environment: ${params.ENV}"
+                }
+                
                 // App credentials (required)
                 withCredentials([
                     string(credentialsId: "${params.ENV.toUpperCase()}_APP_ORG_ID", variable: 'APP_ORG_ID'),
