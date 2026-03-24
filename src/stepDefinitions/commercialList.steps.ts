@@ -1,15 +1,9 @@
-import { Given, When, Then } from "@cucumber/cucumber";
+import { When, Then } from "@cucumber/cucumber";
 import { CustomWorld } from "../world/customWorld";
-import { EnvConfig } from "../config/env";
 import { TestDataStore } from "../helpers/testDataStore";
 import * as assert from "assert";
 
 // ==================== Commercial List Steps ====================
-
-Given("user is on landing page", async function (this: CustomWorld) {
-  await this.page.goto(EnvConfig.BASE_URL);
-  await this.page.waitForLoadState("networkidle");
-});
 
 When("user clicks on list management", async function (this: CustomWorld) {
   const dashboardPage = this.pageManager.getFacctumDashboardPage();
