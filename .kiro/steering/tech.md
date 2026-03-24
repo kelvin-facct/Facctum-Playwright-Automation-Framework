@@ -73,6 +73,7 @@ Report locations:
 - `BROWSER` - Browser type (chromium, firefox, webkit)
 - `PARALLEL` - Number of parallel workers (0 = sequential)
 - `HEADLESS` - Run headless (true/false)
+- `VALIDATE_SESSION` - Validate session before each scenario (true/false, default: true)
 
 ### Database
 ```bash

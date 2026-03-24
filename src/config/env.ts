@@ -25,6 +25,7 @@ interface EnvironmentConfig {
   RECORD_VIDEO: boolean;
   PARALLEL: number;
   RETRY: number;
+  VALIDATE_SESSION: boolean;
   DB_HOST: string;
   DB_PORT: number;
   DB_NAME: string;
@@ -111,6 +112,7 @@ function loadConfig(): EnvironmentConfig {
     RECORD_VIDEO: getBool("RECORD_VIDEO", true),
     PARALLEL: getInt("PARALLEL", 0),
     RETRY: getInt("RETRY", 0),
+    VALIDATE_SESSION: getBool("VALIDATE_SESSION", true),
     DB_HOST: get("DB_HOST"),
     DB_PORT: getInt("DB_PORT", 5432),
     DB_NAME: get("DB_NAME"),

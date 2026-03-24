@@ -36,6 +36,7 @@ pipeline {
         string(name: 'RETRY', defaultValue: '1', description: 'Number of retry attempts for failed tests')
         string(name: 'FEATURE_FILE', defaultValue: '', description: 'Specific feature file to run (leave empty for all)')
         string(name: 'TAGS', defaultValue: '', description: 'Cucumber tags to run (e.g., @smoke, @regression, "not @skip")')
+        booleanParam(name: 'VALIDATE_SESSION', defaultValue: true, description: 'Validate session before each scenario (disable to save ~3-5s per test)')
     }
     
     environment {
@@ -45,6 +46,7 @@ pipeline {
         PARALLEL = "${params.PARALLEL}"
         RETRY = "${params.RETRY}"
         TAGS = "${params.TAGS}"
+        VALIDATE_SESSION = "${params.VALIDATE_SESSION}"
         NODE_OPTIONS = '--max-old-space-size=4096'
         TIMESTAMP = new Date().format("yyyy-MM-dd'T'HH-mm-ss", TimeZone.getTimeZone('UTC'))
     }

@@ -402,10 +402,12 @@ Before(async function (this: CustomWorld, scenario) {
     sources: true
   });
 
-  // Validate session and re-authenticate if expired
-  const sessionRefreshed = await AuthHelper.ensureValidSession(this.page, this.context, authStatePath);
-  if (sessionRefreshed) {
-    logger.info("Session was refreshed - continuing with new authentication");
+  // Validate session and re-authenticate if expired (configurable via VALIDATE_SESSION)
+  if (EnvConfig.VALIDATE_SESSION) {
+    const sessionRefreshed = await AuthHelper.ensureValidSession(this.page, this.context, authStatePath);
+    if (sessionRefreshed) {
+      logger.info("Session was refreshed - continuing with new authentication");
+    }
   }
 });
 
