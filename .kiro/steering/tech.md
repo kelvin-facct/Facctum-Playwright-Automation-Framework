@@ -119,11 +119,14 @@ This displays the active values for key settings and reminds you of the priority
     "DB_PORT": 5432
   },
   "qa": {
-    "BASE_URL": "https://qa-app.facctum.com",
+    "BASE_URL": "https://qa-saas.facctum.com",
+    "API_URL": "https://qa-api.facctum.com",
     "DB_HOST": "localhost"
   },
   "dev": { ... },
-  "stage": { ... }
+  "stage": { ... },
+  "uat": { ... },
+  "prod": { ... }
 }
 ```
 

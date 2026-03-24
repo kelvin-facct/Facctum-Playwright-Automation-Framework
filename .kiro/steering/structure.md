@@ -13,8 +13,9 @@ src/
 ├── stepDefinitions/  # Step definition files (*.steps.ts)
 │
 ├── pages/            # Page Object Model classes
-│   ├── PageManager.ts    # Factory for lazy-loading page objects
-│   └── LoginPage.ts
+│   ├── PageManager.ts        # Factory for lazy-loading page objects
+│   ├── LoginPage.ts          # Login flow page object
+│   └── FacctumDashboardPage.ts  # Dashboard page object
 │
 ├── helpers/          # Reusable utilities
 │   ├── authHelper.ts         # Reusable authentication functions
@@ -36,14 +37,15 @@ src/
 │   └── logger.ts     # Winston logger
 │
 └── scripts/          # Helper scripts
-    ├── generate-report.js  # Standalone HTML report generator
-    ├── show-trace.js       # Open Playwright trace viewer
-    ├── archive-report.js   # Archive reports with timestamps
-    ├── cleanup-reports.js  # Clean old test artifacts
-    ├── run-test.js         # Run specific feature files
-    ├── list-envs.ts        # List available environments
-    ├── show-config.ts      # Display current configuration
-    └── test-dbQuery.ts     # Test database connectivity
+    ├── generate-report.js       # Standalone HTML report generator
+    ├── generate-report-index.js # Generate report history index page
+    ├── show-trace.js            # Open Playwright trace viewer
+    ├── archive-report.js        # Archive reports with timestamps
+    ├── cleanup-reports.js       # Clean old test artifacts
+    ├── run-test.js              # Run specific feature files
+    ├── list-envs.ts             # List available environments
+    ├── show-config.ts           # Display current configuration
+    └── test-dbQuery.ts          # Test database connectivity
 
 reports/              # Test artifacts (gitignored)
 ├── {env}/            # Environment-specific reports (qa, dev, stage, etc.)
@@ -83,7 +85,7 @@ Authentication behavior:
 - Scenarios within the same test run reuse saved session
 - Auth state is browser-specific (e.g., `state-chromium.json`)
 - Auth state is automatically cleared after each test run completes (ensures fresh login on next run)
-- Session is validated before each scenario; if expired, automatic re-authentication occurs
+- Session validation before each scenario is configurable via `VALIDATE_SESSION` (default: true)
 
 Required credentials in `.env.secrets`:
 - `APP_ORG_ID` - Organisation ID
@@ -216,61 +218,3 @@ npx ts-node src/scripts/test-dbQuery.ts
 # Full flow with auto SSO login and tunnel management
 npx ts-node src/scripts/test-dbQuery.ts --full
 ```
-
-### Login Step Definitions
-Pre-built Gherkin steps for authentication in `src/stepDefinitions/login.steps.ts`:
-
-```gherkin
-# Navigate to landing page
-Given user navigates to the landing page
-
-# Default login (uses .env.secrets credentials)
-When user logs in with valid credentials
-
-# Dynamic login - inline format (uses default orgId from config)
-When user logs in with email "analyst@facctum.com" and password "Pass123"
-
-# Dynamic login - data table format (for switching users mid-scenario)
-When user logs in with credentials:
-  | orgId    | different-org       |
-  | email    | admin@facctum.com   |
-  | password | AdminPass123        |
-
-# Verify login success
-Then user should see their name on the dashboard
-Then user should be on the dashboard
-
-# Verify login failure
-Then user should see login error "Invalid credentials"
-
-# Logout
-When user clicks the logout button
-Then user should be redirected to the login page
-```
-
-Note: Scenarios that don't include a login step will automatically use the cached auth state from `.env.secrets` credentials (set up in BeforeAll hook).
-
-### Database Step Definitions
-Pre-built Gherkin steps for database operations in `src/stepDefinitions/database.steps.ts`:
-
-```gherkin
-# Connection management
-Given I connect to the database
-When I disconnect from the database
-
-# User queries
-When I query for user "john.doe"
-Then the user should exist in the database
-Then the user should not exist in the database
-Then the user should have status "active"
-
-# Case queries
-Then case "CAS2607607143423" should exist in the database
-Then case "CAS2607607143423" should not exist in the database
-
-# Generic queries
-When I execute query "SELECT * FROM table"
-Then the query should return {int} row(s)
-```
-
-Note: Database connection must be established with `Given I connect to the database` before running queries. Connection is automatically closed in the After hook.

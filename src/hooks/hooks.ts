@@ -381,33 +381,43 @@ Before(async function (this: CustomWorld, scenario) {
   
   logger.info(`Scenario Started: ${scenarioName}${attempt > 1 ? ` (Attempt ${attempt})` : ""}`);
 
+  // Launch browser
   if (isParallelMode()) {
     this.browser = await BrowserManager.launchBrowser();
   } else {
     this.browser = sharedBrowser!;
   }
+  await this.attach(`Browser: ${browserType}`, "text/plain");
 
+  // Create context with auth
   this.context = await ContextFactory.createContextWithAuth(this.browser, authStatePath, `${getRunArtifactsDir()}/videos`);
   this.page = await this.context.newPage();
   this.pageManager = new PageManager(this.page);
   this.scenarioContext = new ScenarioContext();
+  await this.attach(`Context created with auth state: ${authStatePath}`, "text/plain");
   
   // Store attempt number for After hook
   this.scenarioContext.set("retryAttempt", attempt);
 
-  // Start tracing BEFORE session validation so it's always running
+  // Start tracing
   await this.context.tracing.start({
     screenshots: true,
     snapshots: true,
     sources: true
   });
+  await this.attach("Tracing started", "text/plain");
 
   // Validate session and re-authenticate if expired (configurable via VALIDATE_SESSION)
   if (EnvConfig.VALIDATE_SESSION) {
     const sessionRefreshed = await AuthHelper.ensureValidSession(this.page, this.context, authStatePath);
     if (sessionRefreshed) {
       logger.info("Session was refreshed - continuing with new authentication");
+      await this.attach("Session refreshed - re-authenticated", "text/plain");
+    } else {
+      await this.attach("Session valid", "text/plain");
     }
+  } else {
+    await this.attach("Session validation skipped (VALIDATE_SESSION=false)", "text/plain");
   }
 });
 
@@ -451,19 +461,25 @@ After(async function (this: CustomWorld, scenario) {
       if (isFailed) {
         const runDir = getRunArtifactsDir();
         
+        // Save trace
         try {
           await this.context.tracing.stop({
             path: `${runDir}/traces/${scenarioName}.zip`
           });
+          await this.attach(`Trace saved: ${runDir}/traces/${scenarioName}.zip`, "text/plain");
         } catch (e) {
           logger.error(`Failed to save trace: ${e}`);
         }
 
+        // Capture screenshot
         try {
+          const screenshot = await this.page.screenshot({ fullPage: true });
+          await this.attach(screenshot, "image/png");
           await this.page.screenshot({
             path: `${runDir}/screenshots/${scenarioName}.png`,
             fullPage: true
           });
+          await this.attach(`Screenshot saved: ${runDir}/screenshots/${scenarioName}.png`, "text/plain");
         } catch (e) {
           logger.error(`Failed to take screenshot: ${e}`);
         }
@@ -472,6 +488,7 @@ After(async function (this: CustomWorld, scenario) {
       } else {
         try {
           await this.context.tracing.stop();
+          await this.attach("Tracing stopped", "text/plain");
         } catch (e) {
           // Ignore tracing errors for passed tests
         }
@@ -481,9 +498,11 @@ After(async function (this: CustomWorld, scenario) {
   } catch (error) {
     logger.error(`Error in After Hook: ${error}`);
   } finally {
+    // Cleanup resources
     try {
       if (this.closeDb) {
         await this.closeDb();
+        await this.attach("Database connection closed", "text/plain");
       }
     } catch (e) {
       logger.error(`Failed to close database: ${e}`);
@@ -508,6 +527,8 @@ After(async function (this: CustomWorld, scenario) {
         // Browser already closed
       }
     }
+    
+    await this.attach("Resources cleaned up", "text/plain");
 
     // Handle video: rename for failed scenarios, delete for passed
     if (videoPath) {
@@ -517,6 +538,7 @@ After(async function (this: CustomWorld, scenario) {
         try {
           await fs.rename(videoPath, newVideoPath);
           logger.info(`Video saved: ${newVideoPath}`);
+          await this.attach(`Video saved: ${newVideoPath}`, "text/plain");
         } catch (e) {
           logger.error(`Failed to rename video: ${e}`);
         }

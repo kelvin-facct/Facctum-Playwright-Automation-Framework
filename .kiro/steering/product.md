@@ -13,4 +13,4 @@ Automated browser testing for the Facctum Platform web application, covering:
 ## Target Application
 - Web-based AML compliance platform
 - Requires authenticated access
-- Multi-environment support (QA, Stage, Dev)
+- Multi-environment support (QA, Dev, Stage, UAT, Prod)

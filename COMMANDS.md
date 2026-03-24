@@ -34,6 +34,7 @@
 | `HEADLESS` | true, false | Run without browser UI |
 | `PARALLEL` | 0, 2, 4... | Number of parallel workers (0 = sequential) |
 | `RETRY` | 0, 1, 2... | Number of retry attempts for failed scenarios (0 = no retries) |
+| `VALIDATE_SESSION` | true, false | Validate session before each scenario (default: true) |
 
 ### Setting Environment Variables
 
