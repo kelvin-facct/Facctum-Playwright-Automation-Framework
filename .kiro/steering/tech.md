@@ -138,7 +138,35 @@ APP_ORG_ID=your-org-id
 APP_USERNAME=your.email@example.com
 APP_PASSWORD=your-password
 
+# Environment-specific credentials (optional)
+# Use {ENV}_* prefix to override credentials per environment
+# These take precedence over the base values when running against that environment
+QA_APP_USERNAME=qa.user@example.com
+QA_APP_PASSWORD=qa-password
+DEV_APP_USERNAME=dev.user@example.com
+DEV_APP_PASSWORD=dev-password
+
 # Database credentials
+DB_HOST=localhost
+DB_NAME=facctum
 DB_USER=dbuser
 DB_PASSWORD=dbpassword
+
+# Environment-specific database credentials (optional)
+QA_DB_HOST=qa-db.example.com
+QA_DB_NAME=facctum_qa
+DEV_DB_HOST=dev-db.example.com
+DEV_DB_NAME=facctum_dev
 ```
+
+#### Credential Resolution Priority
+For app credentials (`APP_ORG_ID`, `APP_USERNAME`, `APP_PASSWORD`) and database credentials (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`), the resolution order is:
+1. `{ENV}_*` in process.env (e.g., `DEV_APP_USERNAME`, `DEV_DB_HOST`)
+2. `{ENV}_*` in .env.secrets
+3. `QA_*` fallback in process.env (e.g., `QA_APP_USERNAME`)
+4. `QA_*` fallback in .env.secrets
+5. Base key in process.env (e.g., `APP_USERNAME`, `DB_HOST`)
+6. Base key in .env.secrets or environments.json
+7. Default value
+
+This allows you to maintain different credentials per environment in a single `.env.secrets` file. QA credentials serve as a fallback when environment-specific credentials aren't defined.

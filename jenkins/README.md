@@ -84,24 +84,35 @@ Go to **Manage Jenkins > Plugins > Available plugins** and install:
    - Copy contents from `jenkins/Jenkinsfile`
 5. Save
 
-### 6. Configure Credentials (Optional)
+### 6. Configure Credentials
 
-If your tests need credentials:
+Credentials use environment-specific prefixes (`{ENV}_*`) to support different credentials per environment.
 
 1. Go to **Manage Jenkins > Credentials**
 2. Click **(global)** > **Add Credentials**
-3. Add your secrets:
-   - `APP_ORG_ID`
-   - `APP_USERNAME`
-   - `APP_PASSWORD`
-   - Database credentials if needed
+3. Add credentials with environment prefix:
 
-Then update the Jenkinsfile to use them:
-```groovy
-environment {
-    APP_CREDENTIALS = credentials('app-credentials-id')
-}
-```
+| Credential ID | Description |
+|---------------|-------------|
+| `QA_APP_ORG_ID` | QA Organisation ID |
+| `QA_APP_USERNAME` | QA login email |
+| `QA_APP_PASSWORD` | QA login password |
+| `DEV_APP_ORG_ID` | DEV Organisation ID (optional) |
+| `DEV_APP_USERNAME` | DEV login email (optional) |
+| `DEV_APP_PASSWORD` | DEV login password (optional) |
+| `STAGE_APP_ORG_ID` | Stage Organisation ID (optional) |
+| `STAGE_APP_USERNAME` | Stage login email (optional) |
+| `STAGE_APP_PASSWORD` | Stage login password (optional) |
+
+For database credentials (if needed):
+| Credential ID | Description |
+|---------------|-------------|
+| `QA_DB_USER` | QA database username |
+| `QA_DB_PASSWORD` | QA database password |
+| `DEV_DB_USER` | DEV database username (optional) |
+| `DEV_DB_PASSWORD` | DEV database password (optional) |
+
+The Jenkinsfile automatically loads credentials based on the selected `ENV` parameter. If environment-specific credentials aren't found, QA credentials are used as fallback.
 
 ## Running Tests
 

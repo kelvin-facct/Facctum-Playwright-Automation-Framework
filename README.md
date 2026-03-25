@@ -43,17 +43,36 @@ npx playwright install
 Create a credentials file at `src/config/.env.secrets`:
 
 ```bash
-# App login credentials
-APP_ORG_ID=your-organisation-id
-APP_USERNAME=your.email@example.com
-APP_PASSWORD=your-password
+# ===========================================
+# CREDENTIALS LOOKUP ORDER (per environment):
+# 1. {ENV}_APP_USERNAME (e.g., DEV_APP_USERNAME)
+# 2. QA_APP_USERNAME (QA is the default fallback)
+# ===========================================
 
-# Database credentials (optional)
-DB_USER=dbuser
-DB_PASSWORD=dbpassword
+# QA credentials (default environment)
+QA_APP_ORG_ID=your-organisation-id
+QA_APP_USERNAME=your.email@example.com
+QA_APP_PASSWORD=your-password
+
+# DEV-specific credentials (optional)
+# DEV_APP_ORG_ID=dev-org-id
+# DEV_APP_USERNAME=dev.user@example.com
+# DEV_APP_PASSWORD=dev-password
+
+# STAGE-specific credentials (optional)
+# STAGE_APP_USERNAME=stage.user@example.com
+# STAGE_APP_PASSWORD=stage-password
+
+# QA database credentials (default)
+QA_DB_USER=dbuser
+QA_DB_PASSWORD=dbpassword
+
+# DEV-specific database (optional)
+# DEV_DB_USER=dev_dbuser
+# DEV_DB_PASSWORD=dev_dbpassword
 ```
 
-> **Note:** This file is gitignored and should never be committed.
+> **Note:** This file is gitignored and should never be committed. QA credentials serve as fallback when environment-specific credentials aren't defined.
 
 ### 5. Run Tests
 
@@ -106,6 +125,12 @@ Values are loaded with this priority (highest to lowest):
 2. `.env.secrets` file (for credentials)
 3. Environment-specific config from `environments.json`
 4. Default values from `environments.json._defaults`
+
+For credentials (`APP_*`, `DB_*`), the lookup order is:
+1. `{ENV}_*` prefix (e.g., `DEV_APP_USERNAME` when `ENV=dev`)
+2. `QA_*` prefix (fallback)
+3. Base key (e.g., `APP_USERNAME`)
+4. `environments.json` value
 
 ### View Current Configuration
 
@@ -306,16 +331,23 @@ await AuthHelper.switchOrganization(this.context, this.page, {
 
 ## Database Testing
 
-### Configuration
+### Database Configuration
 
 Add to `.env.secrets`:
 
 ```bash
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=facctum
-DB_USER=dbuser
-DB_PASSWORD=dbpassword
+# QA database credentials (default)
+QA_DB_HOST=localhost
+QA_DB_PORT=5432
+QA_DB_NAME=facctum
+QA_DB_USER=dbuser
+QA_DB_PASSWORD=dbpassword
+
+# DEV-specific database (optional)
+# DEV_DB_HOST=dev-db.example.com
+# DEV_DB_NAME=facctum_dev
+# DEV_DB_USER=dev_user
+# DEV_DB_PASSWORD=dev_password
 
 # For AWS RDS IAM auth
 DB_USE_IAM_AUTH=true
@@ -363,9 +395,10 @@ jobs:
       - run: npx playwright install --with-deps
       - run: npm run test:ci
         env:
-          APP_ORG_ID: ${{ secrets.APP_ORG_ID }}
-          APP_USERNAME: ${{ secrets.APP_USERNAME }}
-          APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
+          # Environment-specific credentials use {ENV}_* prefix
+          QA_APP_ORG_ID: ${{ secrets.QA_APP_ORG_ID }}
+          QA_APP_USERNAME: ${{ secrets.QA_APP_USERNAME }}
+          QA_APP_PASSWORD: ${{ secrets.QA_APP_PASSWORD }}
           HEADLESS: true
       - uses: actions/upload-artifact@v4
         if: always()

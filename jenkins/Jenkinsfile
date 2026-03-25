@@ -75,11 +75,12 @@ pipeline {
                     echo "Build Timestamp: ${TIMESTAMP}"
                 }
                 
-                // App credentials (required)
+                // App credentials (required) - uses {ENV}_* prefix pattern
+                // Credentials are stored as: QA_APP_ORG_ID, DEV_APP_ORG_ID, etc.
                 withCredentials([
-                    string(credentialsId: "${params.ENV.toUpperCase()}_APP_ORG_ID", variable: 'APP_ORG_ID'),
-                    string(credentialsId: "${params.ENV.toUpperCase()}_APP_USERNAME", variable: 'APP_USERNAME'),
-                    string(credentialsId: "${params.ENV.toUpperCase()}_APP_PASSWORD", variable: 'APP_PASSWORD')
+                    string(credentialsId: "${params.ENV.toUpperCase()}_APP_ORG_ID", variable: "${params.ENV.toUpperCase()}_APP_ORG_ID"),
+                    string(credentialsId: "${params.ENV.toUpperCase()}_APP_USERNAME", variable: "${params.ENV.toUpperCase()}_APP_USERNAME"),
+                    string(credentialsId: "${params.ENV.toUpperCase()}_APP_PASSWORD", variable: "${params.ENV.toUpperCase()}_APP_PASSWORD")
                 ]) {
                     bat 'npm ci'
                     bat 'npx playwright install --with-deps'
@@ -89,10 +90,14 @@ pipeline {
         
         stage('Run Tests') {
             steps {
+                // Credentials use {ENV}_* prefix pattern for environment-specific values
                 withCredentials([
-                    string(credentialsId: "${params.ENV.toUpperCase()}_APP_ORG_ID", variable: 'APP_ORG_ID'),
-                    string(credentialsId: "${params.ENV.toUpperCase()}_APP_USERNAME", variable: 'APP_USERNAME'),
-                    string(credentialsId: "${params.ENV.toUpperCase()}_APP_PASSWORD", variable: 'APP_PASSWORD')
+                    string(credentialsId: "${params.ENV.toUpperCase()}_APP_ORG_ID", variable: "${params.ENV.toUpperCase()}_APP_ORG_ID"),
+                    string(credentialsId: "${params.ENV.toUpperCase()}_APP_USERNAME", variable: "${params.ENV.toUpperCase()}_APP_USERNAME"),
+                    string(credentialsId: "${params.ENV.toUpperCase()}_APP_PASSWORD", variable: "${params.ENV.toUpperCase()}_APP_PASSWORD"),
+                    // Optional: Database credentials (uncomment if needed)
+                    // string(credentialsId: "${params.ENV.toUpperCase()}_DB_USER", variable: "${params.ENV.toUpperCase()}_DB_USER"),
+                    // string(credentialsId: "${params.ENV.toUpperCase()}_DB_PASSWORD", variable: "${params.ENV.toUpperCase()}_DB_PASSWORD")
                 ]) {
                     script {
                         def testCommand = "npm run test:ci"

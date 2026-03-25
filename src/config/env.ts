@@ -84,8 +84,19 @@ function loadConfig(): EnvironmentConfig {
   const merged = { ...defaults, ...envConfig, ...secrets };
 
   // Helper to get value with process.env override
+  // For credentials, checks ENV-prefixed keys first (e.g., QA_APP_USERNAME)
   const get = (key: string, defaultVal: any = ""): any => {
     return process.env[key] ?? merged[key] ?? defaultVal;
+  };
+
+  // Helper for environment-specific credentials
+  // Checks: {ENV}_APP_USERNAME -> QA_APP_USERNAME (default) -> merged -> default
+  const getCredential = (key: string, defaultVal: any = ""): any => {
+    const envPrefixedKey = `${env.toUpperCase()}_${key}`;
+    const qaPrefixedKey = `QA_${key}`;
+    return process.env[envPrefixedKey] ?? secrets[envPrefixedKey] ?? 
+           process.env[qaPrefixedKey] ?? secrets[qaPrefixedKey] ??
+           process.env[key] ?? merged[key] ?? defaultVal;
   };
 
   const getBool = (key: string, defaultVal: boolean = false): boolean => {
@@ -103,9 +114,9 @@ function loadConfig(): EnvironmentConfig {
   return {
     BASE_URL: get("BASE_URL"),
     API_URL: get("API_URL"),
-    ORG_ID: get("APP_ORG_ID"),
-    USERNAME: get("APP_USERNAME"),
-    PASSWORD: get("APP_PASSWORD"),
+    ORG_ID: getCredential("APP_ORG_ID"),
+    USERNAME: getCredential("APP_USERNAME"),
+    PASSWORD: getCredential("APP_PASSWORD"),
     HEADLESS: getBool("HEADLESS", false),
     TIMEOUT: getInt("TIMEOUT", 15000),
     EXTENDED_TIMEOUT: getInt("EXTENDED_TIMEOUT", 60000),
@@ -113,11 +124,11 @@ function loadConfig(): EnvironmentConfig {
     PARALLEL: getInt("PARALLEL", 0),
     RETRY: getInt("RETRY", 0),
     VALIDATE_SESSION: getBool("VALIDATE_SESSION", true),
-    DB_HOST: get("DB_HOST"),
+    DB_HOST: getCredential("DB_HOST"),
     DB_PORT: getInt("DB_PORT", 5432),
-    DB_NAME: get("DB_NAME"),
-    DB_USER: get("DB_USER"),
-    DB_PASSWORD: get("DB_PASSWORD"),
+    DB_NAME: getCredential("DB_NAME"),
+    DB_USER: getCredential("DB_USER"),
+    DB_PASSWORD: getCredential("DB_PASSWORD"),
     AWS_REGION: get("AWS_REGION", "us-east-1"),
     DB_USE_IAM_AUTH: getBool("DB_USE_IAM_AUTH", false)
   };

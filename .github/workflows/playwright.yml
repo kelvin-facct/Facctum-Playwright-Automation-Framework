@@ -29,6 +29,13 @@ jobs:
         ENV: qa
         HEADLESS: true
         VALIDATE_SESSION: true
+        # Environment-specific credentials (use {ENV}_* prefix)
+        # These are loaded from GitHub Secrets
+        QA_APP_ORG_ID: ${{ secrets.QA_APP_ORG_ID }}
+        QA_APP_USERNAME: ${{ secrets.QA_APP_USERNAME }}
+        QA_APP_PASSWORD: ${{ secrets.QA_APP_PASSWORD }}
+        QA_DB_USER: ${{ secrets.QA_DB_USER }}
+        QA_DB_PASSWORD: ${{ secrets.QA_DB_PASSWORD }}
     
     - name: Generate Allure Report
       if: always()
