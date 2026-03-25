@@ -94,6 +94,7 @@ Required credentials in `.env.secrets`:
 
 Environment-specific credentials (optional):
 - Use `{ENV}_*` prefix to override per environment (e.g., `DEV_APP_USERNAME`, `STAGE_APP_PASSWORD`)
+- For hyphenated environments, use underscores in the prefix (e.g., `stage-uk` → `STAGE_UK_APP_USERNAME`)
 - These take precedence over base values when running against that environment
 - QA credentials (`QA_*`) serve as fallback when environment-specific credentials aren't defined
 - Supported for both app credentials (`APP_*`) and database credentials (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`)

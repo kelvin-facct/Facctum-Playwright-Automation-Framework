@@ -169,4 +169,8 @@ For app credentials (`APP_ORG_ID`, `APP_USERNAME`, `APP_PASSWORD`) and database 
 6. Base key in .env.secrets or environments.json
 7. Default value
 
+**Note:** For hyphenated environments (e.g., `stage-uk`, `stage-ind`), use underscores in the credential prefix:
+- `stage-uk` → `STAGE_UK_APP_USERNAME`, `STAGE_UK_DB_HOST`
+- `stage-ind` → `STAGE_IND_APP_PASSWORD`, `STAGE_IND_DB_USER`
+
 This allows you to maintain different credentials per environment in a single `.env.secrets` file. QA credentials serve as a fallback when environment-specific credentials aren't defined.

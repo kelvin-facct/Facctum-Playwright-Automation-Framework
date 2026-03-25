@@ -35,6 +35,24 @@
     "DB_USE_IAM_AUTH": true
   },
 
+  "stage-uk": {
+    "BASE_URL": "https://stage-uk-saas.facctum.com",
+    "API_URL": "https://stage-uk-api.facctum.com",
+    "DB_HOST": "stage-uk-facctum-db.xxx.rds.amazonaws.com",
+    "DB_NAME": "facctumdb",
+    "DB_USE_IAM_AUTH": true,
+    "AWS_REGION": "eu-west-2"
+  },
+
+  "stage-ind": {
+    "BASE_URL": "https://stage-ind-saas.facctum.com",
+    "API_URL": "https://stage-ind-api.facctum.com",
+    "DB_HOST": "stage-ind-facctum-db.xxx.rds.amazonaws.com",
+    "DB_NAME": "facctumdb",
+    "DB_USE_IAM_AUTH": true,
+    "AWS_REGION": "ap-south-1"
+  },
+
   "uat": {
     "BASE_URL": "https://uat-saas.facctum.com",
     "API_URL": "https://uat-api.facctum.com",

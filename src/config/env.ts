@@ -90,9 +90,11 @@ function loadConfig(): EnvironmentConfig {
   };
 
   // Helper for environment-specific credentials
+  // Converts hyphens to underscores for env prefix (stage-uk -> STAGE_UK)
   // Checks: {ENV}_APP_USERNAME -> QA_APP_USERNAME (default) -> merged -> default
   const getCredential = (key: string, defaultVal: any = ""): any => {
-    const envPrefixedKey = `${env.toUpperCase()}_${key}`;
+    const envPrefix = env.toUpperCase().replace(/-/g, "_");
+    const envPrefixedKey = `${envPrefix}_${key}`;
     const qaPrefixedKey = `QA_${key}`;
     return process.env[envPrefixedKey] ?? secrets[envPrefixedKey] ?? 
            process.env[qaPrefixedKey] ?? secrets[qaPrefixedKey] ??

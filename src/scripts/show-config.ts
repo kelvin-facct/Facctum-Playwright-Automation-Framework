@@ -6,7 +6,7 @@
 import { EnvConfig } from "../config/env";
 
 const env = process.env.ENV || "qa";
-const envUpper = env.toUpperCase();
+const envUpper = env.toUpperCase().replace(/-/g, "_");
 
 console.log("\n=== Current Configuration ===\n");
 console.log("Environment:", env);
