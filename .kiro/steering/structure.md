@@ -108,10 +108,17 @@ await AuthHelper.login(page, {
 // Login and save auth state (for BeforeAll hooks)
 await AuthHelper.loginAndSaveState("reports/qa/.auth/state.json");
 
-// Switch user mid-scenario (clears session first)
+// Switch user mid-scenario within same org (clears session first)
 await AuthHelper.switchUser(context, page, {
   email: "other@example.com",
   password: "password456"
+});
+
+// Switch to a different organization (full login flow)
+await AuthHelper.switchOrganization(context, page, {
+  orgId: "other-org",
+  email: "user@other-org.com",
+  password: "password789"
 });
 
 // Validate session and re-authenticate if expired (used in Before hook)
@@ -121,7 +128,8 @@ const wasRefreshed = await AuthHelper.ensureValidSession(page, context, authStat
 Key methods:
 - `login(page, credentials)` - Performs login with email/password
 - `loginAndSaveState(authStatePath, credentials?)` - Logs in and saves auth state for session reuse
-- `switchUser(context, page, credentials)` - Clears session and logs in as a different user
+- `switchUser(context, page, credentials)` - Clears session and logs in as different user (same org)
+- `switchOrganization(context, page, credentials)` - Clears all session data and performs full login with new org (orgId required)
 - `validateSession(page)` - Checks if current session is still active
 - `ensureValidSession(page, context, authStatePath)` - Validates session and re-authenticates if expired
 

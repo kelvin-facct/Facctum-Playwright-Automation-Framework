@@ -90,7 +90,7 @@ export class AuthHelper {
 
   /**
    * Clears session and performs fresh login with new credentials.
-   * Used for switching users mid-scenario.
+   * Used for switching users mid-scenario (same org).
    * @param context - Current browser context
    * @param page - Current page
    * @param credentials - New user credentials
@@ -107,6 +107,40 @@ export class AuthHelper {
     
     // Perform fresh login
     await this.login(page, credentials);
+  }
+
+  /**
+   * Switches to a different organization with new credentials.
+   * Clears all session data and performs full login flow from landing page.
+   * @param context - Current browser context
+   * @param page - Current page
+   * @param credentials - New org credentials (orgId required)
+   */
+  static async switchOrganization(
+    context: BrowserContext,
+    page: Page,
+    credentials: LoginCredentials
+  ): Promise<void> {
+    if (!credentials.orgId) {
+      throw new Error("orgId is required for switching organizations");
+    }
+    
+    logger.info(`Switching to organization: ${credentials.orgId}`);
+    
+    // Clear all session data
+    await context.clearCookies();
+    await context.clearPermissions();
+    
+    // Clear localStorage/sessionStorage
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+    
+    // Perform full login with new org
+    await this.login(page, credentials);
+    
+    logger.info(`Switched to org: ${credentials.orgId}, user: ${credentials.email}`);
   }
 
   /**
