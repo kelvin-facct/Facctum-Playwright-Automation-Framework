@@ -312,18 +312,24 @@ The framework handles authentication automatically:
 
 ### Organization Override via Tags
 
-Use the `@org:xxx` tag to run a scenario against a different organization:
+Use the `@org:xxx` tag to run a scenario against a different organization. The tag takes priority over `APP_ORG_ID` in `.env.secrets`:
 
 ```gherkin
 Feature: Multi-tenant Testing
 
-  @org:other-org-id
-  Scenario: Test in different organization
+  @org:facctum
+  Scenario: Test in facctum organization
     Given user is on the dashboard
-    # This scenario will login to "other-org-id" instead of the default org
+    # This scenario will login to "facctum" regardless of .env.secrets value
 ```
 
-The tag triggers automatic login to the specified organization at scenario start. The org ID is also available in step definitions via `this.scenarioContext.get("orgId")`.
+Benefits:
+- Tag value takes priority over `.env.secrets` for org ID
+- Each org gets its own auth state file (e.g., `state-chromium-facctum.json`)
+- Allows parallel testing across different organizations
+- Login happens automatically if auth state doesn't exist for that org
+
+The org ID is also available in step definitions via `this.scenarioContext.get("orgId")`.
 
 ### Switching Users Mid-Test
 

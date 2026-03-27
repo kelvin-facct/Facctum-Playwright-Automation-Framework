@@ -161,13 +161,14 @@ DEV_DB_NAME=facctum_dev
 
 #### Credential Resolution Priority
 For app credentials (`APP_ORG_ID`, `APP_USERNAME`, `APP_PASSWORD`) and database credentials (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`), the resolution order is:
-1. `{ENV}_*` in process.env (e.g., `DEV_APP_USERNAME`, `DEV_DB_HOST`)
-2. `{ENV}_*` in .env.secrets
-3. `QA_*` fallback in process.env (e.g., `QA_APP_USERNAME`)
-4. `QA_*` fallback in .env.secrets
-5. Base key in process.env (e.g., `APP_USERNAME`, `DB_HOST`)
-6. Base key in .env.secrets or environments.json
-7. Default value
+1. `@org:xxx` tag in feature file (for `APP_ORG_ID` only - takes highest priority)
+2. `{ENV}_*` in process.env (e.g., `DEV_APP_USERNAME`, `DEV_DB_HOST`)
+3. `{ENV}_*` in .env.secrets
+4. `QA_*` fallback in process.env (e.g., `QA_APP_USERNAME`)
+5. `QA_*` fallback in .env.secrets
+6. Base key in process.env (e.g., `APP_USERNAME`, `DB_HOST`)
+7. Base key in .env.secrets or environments.json
+8. Default value
 
 **Note:** For hyphenated environments (e.g., `stage-uk`, `stage-ind`), use underscores in the credential prefix:
 - `stage-uk` → `STAGE_UK_APP_USERNAME`, `STAGE_UK_DB_HOST`
