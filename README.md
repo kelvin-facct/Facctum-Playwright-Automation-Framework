@@ -310,6 +310,21 @@ The framework handles authentication automatically:
 2. **Before each scenario**: Loads saved session, validates it, re-authenticates if expired
 3. **AfterAll**: Clears auth state for fresh login on next run
 
+### Organization Override via Tags
+
+Use the `@org:xxx` tag to run a scenario against a different organization:
+
+```gherkin
+Feature: Multi-tenant Testing
+
+  @org:other-org-id
+  Scenario: Test in different organization
+    Given user is on the dashboard
+    # This scenario will login to "other-org-id" instead of the default org
+```
+
+The tag triggers automatic login to the specified organization at scenario start. The org ID is also available in step definitions via `this.scenarioContext.get("orgId")`.
+
 ### Switching Users Mid-Test
 
 ```typescript

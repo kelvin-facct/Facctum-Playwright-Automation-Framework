@@ -1,4 +1,7 @@
 Feature: Commercial List
+  # Use @org:your-org-id to override the default organisation
+  # Example: @org:acme-corp will login to "acme-corp" instead of the default from .env.secrets
+  
   @CommercialList 
   Scenario: Successful login with valid credentials
     When user clicks on list management

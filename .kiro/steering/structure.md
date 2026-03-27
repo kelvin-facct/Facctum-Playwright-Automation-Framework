@@ -86,6 +86,7 @@ Authentication behavior:
 - Auth state is browser-specific (e.g., `state-chromium.json`)
 - Auth state is automatically cleared after each test run completes (ensures fresh login on next run)
 - Session validation before each scenario is configurable via `VALIDATE_SESSION` (default: true)
+- Use `@org:xxx` tag on scenarios to override the default organization (triggers fresh login to specified org)
 
 Required credentials in `.env.secrets`:
 - `APP_ORG_ID` - Organisation ID

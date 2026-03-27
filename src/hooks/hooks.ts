@@ -23,6 +23,24 @@ const authStatePath = `${reportsDir}/.auth/state-${browserType}.json`;
 // Track retry attempts per scenario
 const retryTracker = new Map<string, number>();
 
+// Track org overrides per scenario (for @org:xxx tags)
+const orgOverrideTracker = new Map<string, string>();
+
+/**
+ * Extracts org ID from scenario tags if @org:xxx tag is present.
+ * @param tags - Array of scenario tags
+ * @returns The org ID from the tag, or undefined if not found
+ */
+function getOrgFromTags(tags: { name: string }[]): string | undefined {
+  for (const tag of tags) {
+    const match = tag.name.match(/^@org:(.+)$/i);
+    if (match) {
+      return match[1];
+    }
+  }
+  return undefined;
+}
+
 // Test run timestamp - created once per test run for grouping artifacts
 let testRunTimestamp: string = "";
 
@@ -368,6 +386,9 @@ AfterAll(async function () {
   
   // Clear retry tracker to prevent memory buildup
   retryTracker.clear();
+  
+  // Clear org override tracker
+  orgOverrideTracker.clear();
 });
 
 /**
@@ -413,17 +434,45 @@ Before(async function (this: CustomWorld, scenario) {
   });
   await this.attach("Tracing started", "text/plain");
 
-  // Validate session and re-authenticate if expired (configurable via VALIDATE_SESSION)
-  if (EnvConfig.VALIDATE_SESSION) {
-    const sessionRefreshed = await AuthHelper.ensureValidSession(this.page, this.context, authStatePath);
-    if (sessionRefreshed) {
-      logger.info("Session was refreshed - continuing with new authentication");
-      await this.attach("Session refreshed - re-authenticated", "text/plain");
-    } else {
-      await this.attach("Session valid", "text/plain");
-    }
+  // Check for @org:xxx tag override
+  const orgOverride = getOrgFromTags(scenario.pickle.tags);
+  
+  if (orgOverride) {
+    // Store org override for this scenario
+    orgOverrideTracker.set(scenarioId, orgOverride);
+    logger.info(`Org override detected: @org:${orgOverride}`);
+    await this.attach(`Org override: ${orgOverride}`, "text/plain");
+    
+    // Switch to the specified organization
+    await AuthHelper.switchOrganization(this.context, this.page, {
+      orgId: orgOverride,
+      email: EnvConfig.USERNAME,
+      password: EnvConfig.PASSWORD
+    });
+    
+    // Save the new auth state for subsequent scenarios
+    await this.context.storageState({ path: authStatePath });
+    logger.info(`Auth state saved for org: ${orgOverride}`);
+    await this.attach(`Auth state saved for org: ${orgOverride}`, "text/plain");
+    
+    // Store in scenario context for step definitions to access
+    this.scenarioContext.set("orgId", orgOverride);
   } else {
-    await this.attach("Session validation skipped (VALIDATE_SESSION=false)", "text/plain");
+    // Store default org in scenario context
+    this.scenarioContext.set("orgId", EnvConfig.ORG_ID);
+    
+    // Validate session and re-authenticate if expired (configurable via VALIDATE_SESSION)
+    if (EnvConfig.VALIDATE_SESSION) {
+      const sessionRefreshed = await AuthHelper.ensureValidSession(this.page, this.context, authStatePath);
+      if (sessionRefreshed) {
+        logger.info("Session was refreshed - continuing with new authentication");
+        await this.attach("Session refreshed - re-authenticated", "text/plain");
+      } else {
+        await this.attach("Session valid", "text/plain");
+      }
+    } else {
+      await this.attach("Session validation skipped (VALIDATE_SESSION=false)", "text/plain");
+    }
   }
 });
 

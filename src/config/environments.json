@@ -63,7 +63,6 @@
   "prod": {
     "BASE_URL": "https://saas.facctum.com",
     "API_URL": "https://api.facctum.com",
-    "APP_ORG_ID": "facctum",
     "HEADLESS": true,
     "RECORD_VIDEO": false
   }
