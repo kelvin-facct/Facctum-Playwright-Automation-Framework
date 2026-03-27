@@ -83,10 +83,22 @@ The login flow is a multi-step process:
 Authentication behavior:
 - One-time login saves auth state to `reports/{env}/.auth/`
 - Scenarios within the same test run reuse saved session
-- Auth state is browser-specific (e.g., `state-chromium.json`)
+- Auth state is browser and org-specific (e.g., `state-chromium.json` for default org, `state-chromium-facctum.json` for `@org:facctum`)
 - Auth state is automatically cleared after each test run completes (ensures fresh login on next run)
 - Session validation before each scenario is configurable via `VALIDATE_SESSION` (default: true)
-- Use `@org:xxx` tag on scenarios to override the default organization (triggers fresh login to specified org)
+
+#### Organization Override with @org Tag
+Use `@org:xxx` tag on scenarios to override the default organization:
+- Tag takes priority over `APP_ORG_ID` in `.env.secrets`
+- Each org gets its own auth state file (allows parallel testing across orgs)
+- Login happens automatically if auth state doesn't exist for that org
+
+```gherkin
+@CommercialList @org:facctum
+Scenario: Test with facctum org
+  When user clicks on list management
+  Then user should see the dashboard
+```
 
 Required credentials in `.env.secrets`:
 - `APP_ORG_ID` - Organisation ID
@@ -113,7 +125,7 @@ await AuthHelper.login(page, {
   orgId: "my-org"  // optional, defaults to EnvConfig.ORG_ID
 });
 
-// Login and save auth state (for BeforeAll hooks)
+// Login and save auth state (for Before hooks)
 await AuthHelper.loginAndSaveState("reports/qa/.auth/state.json");
 
 // Switch user mid-scenario within same org (clears session first)

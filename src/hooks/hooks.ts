@@ -31,7 +31,7 @@ const orgOverrideTracker = new Map<string, string>();
  * @param tags - Array of scenario tags
  * @returns The org ID from the tag, or undefined if not found
  */
-function getOrgFromTags(tags: { name: string }[]): string | undefined {
+function getOrgFromTags(tags: readonly { name: string }[]): string | undefined {
   for (const tag of tags) {
     const match = tag.name.match(/^@org:(.+)$/i);
     if (match) {
@@ -333,6 +333,7 @@ async function ensureAuthenticated(): Promise<void> {
 
 /**
  * BeforeAll Hook - Runs once before all scenarios.
+ * Note: Authentication is deferred to Before hook to support @org:xxx tag overrides.
  */
 BeforeAll(async function () {
   // Initialize test run timestamp once for the entire run
@@ -347,7 +348,7 @@ BeforeAll(async function () {
   await writeAllureExecutor();
   await writeAllureCategories();
   await cleanupOldArtifacts();
-  await ensureAuthenticated();
+  // Authentication deferred to Before hook to support @org:xxx tag overrides
   
   if (!isParallelMode()) {
     logger.info("Sequential mode: using shared browser instance");
@@ -358,14 +359,22 @@ BeforeAll(async function () {
 });
 
 /**
- * Clears saved authentication state to force fresh login on next run.
+ * Clears all saved authentication states to force fresh login on next run.
+ * Removes both default and org-specific auth state files.
  */
 async function clearAuthState(): Promise<void> {
+  const authDir = `${reportsDir}/.auth`;
   try {
-    await fs.unlink(authStatePath);
-    logger.info(`Auth state cleared: ${authStatePath}`);
+    const files = await fs.readdir(authDir);
+    for (const file of files) {
+      if (file.startsWith(`state-${browserType}`)) {
+        const filePath = path.join(authDir, file);
+        await fs.unlink(filePath);
+        logger.info(`Auth state cleared: ${filePath}`);
+      }
+    }
   } catch {
-    // File doesn't exist, nothing to clear
+    // Directory doesn't exist or no files to clear
   }
 }
 
@@ -393,6 +402,7 @@ AfterAll(async function () {
 
 /**
  * Before Hook - Runs before each scenario.
+ * Handles authentication with @org:xxx tag taking priority over .env.secrets.
  */
 Before(async function (this: CustomWorld, scenario) {
   const scenarioName = scenario.pickle.name;
@@ -408,6 +418,16 @@ Before(async function (this: CustomWorld, scenario) {
   
   logger.info(`Scenario Started: ${scenarioName}${attempt > 1 ? ` (Attempt ${attempt})` : ""}`);
 
+  // Check for @org:xxx tag override FIRST - this takes priority
+  const orgOverride = getOrgFromTags(scenario.pickle.tags);
+  const effectiveOrgId = orgOverride || EnvConfig.ORG_ID;
+  
+  if (orgOverride) {
+    logger.info(`Using org from @org tag: ${orgOverride}`);
+  } else {
+    logger.info(`Using org from config: ${effectiveOrgId}`);
+  }
+
   // Launch browser
   if (isParallelMode()) {
     this.browser = await BrowserManager.launchBrowser();
@@ -416,15 +436,69 @@ Before(async function (this: CustomWorld, scenario) {
   }
   await this.attach(`Browser: ${browserType}`, "text/plain");
 
+  // Determine auth state path - use org-specific path if tag override exists
+  const effectiveAuthPath = orgOverride 
+    ? `${reportsDir}/.auth/state-${browserType}-${orgOverride}.json`
+    : authStatePath;
+
+  // Check if we need to authenticate
+  let needsAuth = false;
+  try {
+    await fs.access(effectiveAuthPath);
+    logger.info(`Auth state exists: ${effectiveAuthPath}`);
+  } catch {
+    needsAuth = true;
+    logger.info(`Auth state not found, will authenticate: ${effectiveAuthPath}`);
+  }
+
+  if (needsAuth) {
+    // Perform login with the effective org ID (from tag or config)
+    logger.info(`Performing login for org: ${effectiveOrgId}...`);
+    try {
+      await AuthHelper.loginAndSaveState(effectiveAuthPath, {
+        orgId: effectiveOrgId,
+        email: EnvConfig.USERNAME,
+        password: EnvConfig.PASSWORD
+      });
+      logger.info(`Auth state saved: ${effectiveAuthPath}`);
+    } catch (error) {
+      const errorMsg = `
+╔════════════════════════════════════════════════════════════════╗
+║                    LOGIN FAILED                                ║
+╠════════════════════════════════════════════════════════════════╣
+║  Could not login to ${EnvConfig.BASE_URL}
+║  
+║  Org ID:   ${effectiveOrgId}${orgOverride ? " (from @org tag)" : " (from config)"}
+║  Username: ${EnvConfig.USERNAME}
+║  Password: ${"*".repeat(Math.min(EnvConfig.PASSWORD.length, 8))}...
+║  
+║  Please check:
+║  1. Org ID in @org:xxx tag or .env.secrets
+║  2. Credentials in .env.secrets or environments.json
+║  3. The application is accessible
+║  
+║  Run 'npx ts-node src/scripts/show-config.ts' to see current config
+╚════════════════════════════════════════════════════════════════╝`;
+      
+      logger.error(errorMsg);
+      throw new Error(`LOGIN FAILED for org "${effectiveOrgId}" user "${EnvConfig.USERNAME}"`);
+    }
+  }
+
   // Create context with auth
-  this.context = await ContextFactory.createContextWithAuth(this.browser, authStatePath, `${getRunArtifactsDir()}/videos`);
+  this.context = await ContextFactory.createContextWithAuth(this.browser, effectiveAuthPath, `${getRunArtifactsDir()}/videos`);
   this.page = await this.context.newPage();
   this.pageManager = new PageManager(this.page);
   this.scenarioContext = new ScenarioContext();
-  await this.attach(`Context created with auth state: ${authStatePath}`, "text/plain");
+  await this.attach(`Context created with auth state: ${effectiveAuthPath}`, "text/plain");
   
-  // Store attempt number for After hook
+  // Store attempt number and org for After hook
   this.scenarioContext.set("retryAttempt", attempt);
+  this.scenarioContext.set("orgId", effectiveOrgId);
+  if (orgOverride) {
+    orgOverrideTracker.set(scenarioId, orgOverride);
+    await this.attach(`Org from @org tag: ${orgOverride}`, "text/plain");
+  }
 
   // Start tracing
   await this.context.tracing.start({
@@ -434,45 +508,17 @@ Before(async function (this: CustomWorld, scenario) {
   });
   await this.attach("Tracing started", "text/plain");
 
-  // Check for @org:xxx tag override
-  const orgOverride = getOrgFromTags(scenario.pickle.tags);
-  
-  if (orgOverride) {
-    // Store org override for this scenario
-    orgOverrideTracker.set(scenarioId, orgOverride);
-    logger.info(`Org override detected: @org:${orgOverride}`);
-    await this.attach(`Org override: ${orgOverride}`, "text/plain");
-    
-    // Switch to the specified organization
-    await AuthHelper.switchOrganization(this.context, this.page, {
-      orgId: orgOverride,
-      email: EnvConfig.USERNAME,
-      password: EnvConfig.PASSWORD
-    });
-    
-    // Save the new auth state for subsequent scenarios
-    await this.context.storageState({ path: authStatePath });
-    logger.info(`Auth state saved for org: ${orgOverride}`);
-    await this.attach(`Auth state saved for org: ${orgOverride}`, "text/plain");
-    
-    // Store in scenario context for step definitions to access
-    this.scenarioContext.set("orgId", orgOverride);
-  } else {
-    // Store default org in scenario context
-    this.scenarioContext.set("orgId", EnvConfig.ORG_ID);
-    
-    // Validate session and re-authenticate if expired (configurable via VALIDATE_SESSION)
-    if (EnvConfig.VALIDATE_SESSION) {
-      const sessionRefreshed = await AuthHelper.ensureValidSession(this.page, this.context, authStatePath);
-      if (sessionRefreshed) {
-        logger.info("Session was refreshed - continuing with new authentication");
-        await this.attach("Session refreshed - re-authenticated", "text/plain");
-      } else {
-        await this.attach("Session valid", "text/plain");
-      }
+  // Validate session and re-authenticate if expired (configurable via VALIDATE_SESSION)
+  if (EnvConfig.VALIDATE_SESSION) {
+    const sessionRefreshed = await AuthHelper.ensureValidSession(this.page, this.context, effectiveAuthPath);
+    if (sessionRefreshed) {
+      logger.info("Session was refreshed - continuing with new authentication");
+      await this.attach("Session refreshed - re-authenticated", "text/plain");
     } else {
-      await this.attach("Session validation skipped (VALIDATE_SESSION=false)", "text/plain");
+      await this.attach("Session valid", "text/plain");
     }
+  } else {
+    await this.attach("Session validation skipped (VALIDATE_SESSION=false)", "text/plain");
   }
 });
 
