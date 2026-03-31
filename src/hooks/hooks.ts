@@ -510,7 +510,16 @@ Before(async function (this: CustomWorld, scenario) {
 
   // Validate session and re-authenticate if expired (configurable via VALIDATE_SESSION)
   if (EnvConfig.VALIDATE_SESSION) {
-    const sessionRefreshed = await AuthHelper.ensureValidSession(this.page, this.context, effectiveAuthPath);
+    const sessionRefreshed = await AuthHelper.ensureValidSession(
+      this.page, 
+      this.context, 
+      effectiveAuthPath,
+      {
+        orgId: effectiveOrgId,
+        email: EnvConfig.USERNAME,
+        password: EnvConfig.PASSWORD
+      }
+    );
     if (sessionRefreshed) {
       logger.info("Session was refreshed - continuing with new authentication");
       await this.attach("Session refreshed - re-authenticated", "text/plain");
@@ -520,6 +529,16 @@ Before(async function (this: CustomWorld, scenario) {
   } else {
     await this.attach("Session validation skipped (VALIDATE_SESSION=false)", "text/plain");
   }
+
+  // Track current user credentials for session management during scenario
+  // This allows mid-scenario user switches to update the active credentials
+  this.scenarioContext.set("currentUser", {
+    orgId: effectiveOrgId,
+    email: EnvConfig.USERNAME,
+    password: EnvConfig.PASSWORD
+  });
+  this.scenarioContext.set("currentAuthPath", effectiveAuthPath);
+  logger.info(`Current user set to: ${EnvConfig.USERNAME} (org: ${effectiveOrgId})`);
 });
 
 /**

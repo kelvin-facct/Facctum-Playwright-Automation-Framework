@@ -1,7 +1,7 @@
 {
   "_defaults": {
     "HEADLESS": false,
-    "TIMEOUT": 15000,
+    "TIMEOUT": 30000,
     "EXTENDED_TIMEOUT": 60000,
     "PARALLEL": 0,
     "RETRY": 1,

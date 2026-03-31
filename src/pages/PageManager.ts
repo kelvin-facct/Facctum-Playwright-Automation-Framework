@@ -1,6 +1,7 @@
 import { Page } from "playwright";
 import { LoginPage } from "./LoginPage";
 import { FacctumDashboardPage } from "./FacctumDashboardPage";
+import { PreScreeningRulePage } from "./PreScreeningRulePage";
 
 /**
  * PageManager - Factory class for lazy-loading and caching page objects.
@@ -11,6 +12,7 @@ export class PageManager {
   private page: Page;
   private loginPage?: LoginPage;
   private facctumDashboardPage?: FacctumDashboardPage;
+  private preScreeningRulePage?: PreScreeningRulePage;
 
   constructor(page: Page) {
     this.page = page;
@@ -22,10 +24,18 @@ export class PageManager {
     }
     return this.loginPage;
   }
+
   getFacctumDashboardPage(): FacctumDashboardPage {
     if (!this.facctumDashboardPage) {
       this.facctumDashboardPage = new FacctumDashboardPage(this.page);
     }
     return this.facctumDashboardPage;
+  }
+
+  getPreScreeningRulePage(): PreScreeningRulePage {
+    if (!this.preScreeningRulePage) {
+      this.preScreeningRulePage = new PreScreeningRulePage(this.page);
+    }
+    return this.preScreeningRulePage;
   }
 }

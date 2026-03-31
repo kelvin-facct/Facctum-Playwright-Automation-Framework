@@ -54,7 +54,9 @@ export class LoginPage {
    */
   async isOnLandingPage(): Promise<boolean> {
     try {
-      await this.btnLogin.waitFor({ timeout: 3000 });
+      // Try multiple selectors for the LOG IN button
+      const loginBtn = this.page.locator('button:has-text("LOG IN"), button:has-text("Log In"), button:has-text("Login")').first();
+      await loginBtn.waitFor({ timeout: 5000, state: "visible" });
       return true;
     } catch {
       return false;
@@ -66,6 +68,12 @@ export class LoginPage {
    */
   async isLoggedIn(): Promise<boolean> {
     try {
+      // Check URL first - if we're on the landing page, we're not logged in
+      const url = this.page.url();
+      if (url.includes('auth') || url === 'https://qa-saas.facctum.com/' || url === 'https://qa-saas.facctum.com') {
+        return false;
+      }
+      
       await this.dashboardContainer.waitFor({ timeout: 3000 });
       return true;
     } catch {
@@ -84,14 +92,29 @@ export class LoginPage {
       return;
     }
 
-    // Click LOG IN on landing page (unless skipped)
-    if (!skipLandingPage) {
-      await this.btnLogin.click();
+    // Wait for page to stabilize after logout/navigation
+    await this.page.waitForLoadState("domcontentloaded");
+    await this.page.waitForTimeout(1000);
+
+    // Always check if LOG IN button is visible and click it if present
+    // This handles cases where logout redirects to landing page
+    const isOnLanding = await this.isOnLandingPage();
+    if (isOnLanding) {
+      // Use a more robust locator for the LOG IN button
+      const loginBtn = this.page.locator('button:has-text("LOG IN"), button:has-text("Log In")').first();
+      await loginBtn.click();
+      await this.page.waitForTimeout(500);
     }
+
+    // Wait for org ID input to be visible
+    await this.txtOrgId.waitFor({ state: "visible", timeout: 10000 });
 
     // Enter Organisation ID
     await this.txtOrgId.fill(orgId);
     await this.btnContinueOrg.click();
+
+    // Wait for email input to be visible
+    await this.txtEmail.waitFor({ state: "visible", timeout: 10000 });
 
     // Enter email and password
     await this.txtEmail.fill(email);

@@ -16,6 +16,7 @@
 - `cross-env` - Cross-platform env variables
 - `pg` - PostgreSQL client for database operations
 - `@aws-sdk/rds-signer` - AWS RDS IAM authentication
+- `xlsx` - Excel file reading for data-driven testing
 
 ## Common Commands
 
@@ -138,6 +139,12 @@ APP_ORG_ID=your-org-id
 APP_USERNAME=your.email@example.com
 APP_PASSWORD=your-password
 
+# Approver credentials (for approval workflows)
+# Used when tests need to login as an approver to claim/approve items
+QA_APPROVER_USERNAME=approver@example.com
+QA_APPROVER_PASSWORD=approver-password
+QA_APPROVER_ORG_ID=approver-org-id  # Optional: if approver uses different org than maker
+
 # Environment-specific credentials (optional)
 # Use {ENV}_* prefix to override credentials per environment
 # These take precedence over the base values when running against that environment
@@ -160,13 +167,13 @@ DEV_DB_NAME=facctum_dev
 ```
 
 #### Credential Resolution Priority
-For app credentials (`APP_ORG_ID`, `APP_USERNAME`, `APP_PASSWORD`) and database credentials (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`), the resolution order is:
+For app credentials (`APP_ORG_ID`, `APP_USERNAME`, `APP_PASSWORD`), approver credentials (`APPROVER_USERNAME`, `APPROVER_PASSWORD`), and database credentials (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`), the resolution order is:
 1. `@org:xxx` tag in feature file (for `APP_ORG_ID` only - takes highest priority)
-2. `{ENV}_*` in process.env (e.g., `DEV_APP_USERNAME`, `DEV_DB_HOST`)
+2. `{ENV}_*` in process.env (e.g., `DEV_APP_USERNAME`, `DEV_DB_HOST`, `DEV_APPROVER_USERNAME`)
 3. `{ENV}_*` in .env.secrets
-4. `QA_*` fallback in process.env (e.g., `QA_APP_USERNAME`)
+4. `QA_*` fallback in process.env (e.g., `QA_APP_USERNAME`, `QA_APPROVER_USERNAME`)
 5. `QA_*` fallback in .env.secrets
-6. Base key in process.env (e.g., `APP_USERNAME`, `DB_HOST`)
+6. Base key in process.env (e.g., `APP_USERNAME`, `DB_HOST`, `APPROVER_USERNAME`)
 7. Base key in .env.secrets or environments.json
 8. Default value
 
@@ -175,3 +182,31 @@ For app credentials (`APP_ORG_ID`, `APP_USERNAME`, `APP_PASSWORD`) and database 
 - `stage-ind` → `STAGE_IND_APP_PASSWORD`, `STAGE_IND_DB_USER`
 
 This allows you to maintain different credentials per environment in a single `.env.secrets` file. QA credentials serve as a fallback when environment-specific credentials aren't defined.
+
+
+## Data-Driven Testing
+
+### Excel Reader
+Use `ExcelReader` from `src/helpers/excelReader.ts` to read test data from Excel files.
+
+Test data location: `src/resources/testData/`
+
+```typescript
+import { ExcelReader } from "../helpers/excelReader";
+
+// Load Excel file
+const excel = new ExcelReader("src/resources/testData/TestData.xlsx");
+
+// Read cell by row/column (0-based)
+const value = excel.getCellValue("SheetName", 1, 4);
+
+// Read cell by reference
+const cell = excel.getCellByRef("SheetName", "A2");
+
+// Get row as object (uses first row as headers)
+const rowData = excel.getRowAsObject("SheetName", 0);
+
+// Get all sheet data as typed array
+interface TestCase { Name: string; Input: string; Expected: string; }
+const testCases = excel.getSheetData<TestCase>("TestCases");
+```

@@ -15,7 +15,7 @@ src/
 ├── pages/            # Page Object Model classes
 │   ├── PageManager.ts        # Factory for lazy-loading page objects
 │   ├── LoginPage.ts          # Login flow page object
-│   └── FacctumDashboardPage.ts  # Dashboard page object
+│   └── FacctumDashboardPage.ts  # Dashboard/Home page object
 │
 ├── helpers/          # Reusable utilities
 │   ├── authHelper.ts         # Reusable authentication functions
@@ -23,9 +23,13 @@ src/
 │   ├── contextFactory.ts     # Context creation with auth
 │   ├── database.ts           # PostgreSQL database helper (IAM + password auth)
 │   ├── dbQuery.ts            # Database queries with auto SSM tunnel management
+│   ├── excelReader.ts        # Excel file reader for data-driven testing
 │   ├── playwrightActions.ts  # Wrapper for common Playwright operations
 │   ├── scenarioContext.ts    # Cross-step data sharing
 │   └── testDataStore.ts      # Persist data across scenarios via JSON file
+│
+├── resources/        # Test resources
+│   └── testData/     # Excel files and other test data for DDT
 │
 ├── hooks/            # Cucumber hooks (Before/After)
 │   └── hooks.ts      # Setup, teardown, screenshots, tracing
@@ -45,7 +49,8 @@ src/
     ├── run-test.js              # Run specific feature files
     ├── list-envs.ts             # List available environments
     ├── show-config.ts           # Display current configuration
-    └── test-dbQuery.ts          # Test database connectivity
+    ├── test-dbQuery.ts          # Test database connectivity
+    └── read-test-data.ts        # Inspect Excel test data files
 
 reports/              # Test artifacts (gitignored)
 ├── {env}/            # Environment-specific reports (qa, dev, stage, etc.)
@@ -105,12 +110,49 @@ Required credentials in `.env.secrets`:
 - `APP_USERNAME` - Email address
 - `APP_PASSWORD` - Password
 
+Approver credentials (for approval workflows):
+- `APPROVER_USERNAME` - Approver email address
+- `APPROVER_PASSWORD` - Approver password
+- `APPROVER_ORG_ID` - Approver organization (optional, see resolution below)
+- Access via `EnvConfig.APPROVER_USERNAME`, `EnvConfig.APPROVER_PASSWORD`, and `EnvConfig.APPROVER_ORG_ID`
+
+Approver organization resolution order:
+1. `APPROVER_ORG_ID` in `.env.secrets` (explicit override, highest priority)
+2. `@org:xxx` tag from the scenario (inherits maker's org)
+3. Default fallback: `equalsmoney`
+
+This means by default, the approver uses the same organization as the maker (from `@org` tag). Only set `QA_APPROVER_ORG_ID` when the approver needs a different organization than the maker.
+
+#### Generic Login Steps
+Use the generic login step to switch between user roles in scenarios:
+
+```gherkin
+# Login as maker (uses APP_* credentials)
+When user logs in as "maker"
+
+# Login as approver (uses APPROVER_* credentials)
+When user logs in as "approver"
+
+# Verify current user
+Then the current user should be "approver"
+```
+
+Supported roles:
+- `maker` - Uses `APP_ORG_ID`, `APP_USERNAME`, `APP_PASSWORD`
+- `approver` - Uses `APPROVER_ORG_ID`, `APPROVER_USERNAME`, `APPROVER_PASSWORD`
+
+The step automatically:
+- Performs login with role-specific credentials
+- Updates `currentUser` in scenario context
+- Saves auth state for session reuse
+- Verifies dashboard loaded successfully
+
 Environment-specific credentials (optional):
-- Use `{ENV}_*` prefix to override per environment (e.g., `DEV_APP_USERNAME`, `STAGE_APP_PASSWORD`)
+- Use `{ENV}_*` prefix to override per environment (e.g., `DEV_APP_USERNAME`, `STAGE_APP_PASSWORD`, `QA_APPROVER_USERNAME`)
 - For hyphenated environments, use underscores in the prefix (e.g., `stage-uk` → `STAGE_UK_APP_USERNAME`)
 - These take precedence over base values when running against that environment
 - QA credentials (`QA_*`) serve as fallback when environment-specific credentials aren't defined
-- Supported for both app credentials (`APP_*`) and database credentials (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`)
+- Supported for app credentials (`APP_*`), approver credentials (`APPROVER_*`), and database credentials (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`)
 
 ### AuthHelper (authHelper.ts)
 Reusable authentication functions for login operations.
@@ -143,6 +185,13 @@ await AuthHelper.switchOrganization(context, page, {
 
 // Validate session and re-authenticate if expired (used in Before hook)
 const wasRefreshed = await AuthHelper.ensureValidSession(page, context, authStatePath);
+
+// Validate session with custom credentials (e.g., for approver sessions)
+const wasRefreshed = await AuthHelper.ensureValidSession(page, context, authStatePath, {
+  email: EnvConfig.APPROVER_USERNAME,
+  password: EnvConfig.APPROVER_PASSWORD,
+  orgId: EnvConfig.APPROVER_ORG_ID
+});
 ```
 
 Key methods:
@@ -151,7 +200,7 @@ Key methods:
 - `switchUser(context, page, credentials)` - Clears session and logs in as different user (same org)
 - `switchOrganization(context, page, credentials)` - Clears all session data and performs full login with new org (orgId required)
 - `validateSession(page)` - Checks if current session is still active
-- `ensureValidSession(page, context, authStatePath)` - Validates session and re-authenticates if expired
+- `ensureValidSession(page, context, authStatePath, credentials?)` - Validates session and re-authenticates if expired (optional credentials for custom users)
 
 ### Database Access
 - `DatabaseHelper` class in `src/helpers/database.ts`
@@ -211,6 +260,52 @@ Key methods:
 
 Data is stored in `reports/test-data.json` and should be cleared in the AfterAll hook to ensure clean state between test runs. Use namespaced keys to avoid conflicts in parallel execution: `"feature.keyName"`.
 
+### Excel Reader (excelReader.ts)
+Utility for reading test data from Excel files (.xlsx, .xls) for data-driven testing.
+
+```typescript
+import { ExcelReader, readExcelSheet } from "../helpers/excelReader";
+
+// Create reader instance
+const reader = new ExcelReader("src/test/resources/testData/TestData.xlsx");
+
+// Get sheet data as array of objects (first row as headers)
+const testData = reader.getSheetData<{ Name: string; Email: string }>("Sheet1");
+
+// Get specific cell value by row/column index (0-based)
+const value = reader.getCellValue("Sheet1", 0, 0);
+
+// Get cell by reference (e.g., "A1", "B2")
+const cell = reader.getCellByRef("Sheet1", "A1");
+
+// Get entire row as array
+const row = reader.getRow("Sheet1", 0);
+
+// Get row as object using header row
+const rowData = reader.getRowAsObject("Sheet1", 0); // { Header1: "value1", Header2: "value2" }
+
+// Find row by column value (case-insensitive)
+const rowIndex = reader.findRowByValue("Sheet1", 0, "searchValue");
+
+// Get sheet metadata
+const sheetNames = reader.getSheetNames();
+const rowCount = reader.getRowCount("Sheet1");
+const colCount = reader.getColumnCount("Sheet1");
+
+// Static helpers for quick reads
+const data = readExcelSheet("path/to/file.xlsx", "Sheet1");
+```
+
+Key methods:
+- `getSheetData<T>(sheetName)` - Get all rows as objects (first row = headers)
+- `getCellValue(sheet, row, col)` - Get cell by 0-based indices
+- `getCellByRef(sheet, ref)` - Get cell by reference (e.g., "A1")
+- `getRow(sheet, rowIndex)` - Get entire row as array
+- `getRowAsObject(sheet, rowIndex)` - Get row as object with header keys
+- `findRowByValue(sheet, colIndex, value)` - Find row index by value
+- `getSheetNames()` - List all sheet names
+- `getRowCount(sheet)` / `getColumnCount(sheet)` - Get dimensions
+
 ### Database Queries with Auto-Tunnel (dbQuery.ts)
 For local development requiring SSM tunnel access to RDS:
 
@@ -246,3 +341,49 @@ npx ts-node src/scripts/test-dbQuery.ts
 # Full flow with auto SSO login and tunnel management
 npx ts-node src/scripts/test-dbQuery.ts --full
 ```
+
+
+### Excel Reader (excelReader.ts)
+Read test data from Excel files for data-driven testing.
+
+```typescript
+import { ExcelReader, readExcelCell, readExcelSheet } from "../helpers/excelReader";
+
+// Method 1: Instance-based (recommended for multiple reads from same file)
+const excel = new ExcelReader("src/resources/testData/TestData.xlsx");
+
+// Get single cell value (0-based indices)
+const ruleName = excel.getCellValue("Shield", 1, 4);  // row 1, column 4
+
+// Get cell by reference
+const value = excel.getCellByRef("Shield", "A2");
+
+// Get entire row as array
+const rowData = excel.getRow("Shield", 1);
+
+// Get row as object (using header row)
+const data = excel.getRowAsObject("Shield", 0);  // { RuleName: "...", OrderId: "..." }
+
+// Get all sheet data as array of objects
+const allData = excel.getSheetData<{ RuleName: string; OrderId: string }>("Shield");
+
+// Find row by value
+const rowIndex = excel.findRowByValue("Shield", 0, "MyRule");
+
+// Method 2: Static helpers (quick one-off reads)
+const cell = readExcelCell("src/resources/testData/TestData.xlsx", "Sheet1", 1, 0);
+const sheetData = readExcelSheet("src/resources/testData/TestData.xlsx", "Sheet1");
+```
+
+Key methods:
+- `getCellValue(sheet, row, col)` - Get cell by 0-based indices
+- `getCellByRef(sheet, ref)` - Get cell by reference (e.g., "A1")
+- `getRow(sheet, rowIndex)` - Get entire row as array
+- `getColumn(sheet, colIndex)` - Get entire column as array
+- `getRowAsObject(sheet, rowIndex)` - Get row as object with header keys
+- `getSheetData<T>(sheet)` - Get all data as typed array of objects
+- `findRowByValue(sheet, col, value)` - Find row index by column value
+- `getSheetNames()` - List all sheet names
+- `getRowCount(sheet)` / `getColumnCount(sheet)` - Get dimensions
+
+Test data files location: `src/resources/testData/`

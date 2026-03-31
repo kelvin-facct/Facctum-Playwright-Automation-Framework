@@ -19,6 +19,9 @@ interface EnvironmentConfig {
   ORG_ID: string;
   USERNAME: string;
   PASSWORD: string;
+  APPROVER_USERNAME: string;
+  APPROVER_PASSWORD: string;
+  APPROVER_ORG_ID: string;
   HEADLESS: boolean;
   TIMEOUT: number;
   EXTENDED_TIMEOUT: number;
@@ -119,6 +122,9 @@ function loadConfig(): EnvironmentConfig {
     ORG_ID: getCredential("APP_ORG_ID"),
     USERNAME: getCredential("APP_USERNAME"),
     PASSWORD: getCredential("APP_PASSWORD"),
+    APPROVER_USERNAME: getCredential("APPROVER_USERNAME"),
+    APPROVER_PASSWORD: getCredential("APPROVER_PASSWORD"),
+    APPROVER_ORG_ID: getCredential("APPROVER_ORG_ID"),
     HEADLESS: getBool("HEADLESS", false),
     TIMEOUT: getInt("TIMEOUT", 15000),
     EXTENDED_TIMEOUT: getInt("EXTENDED_TIMEOUT", 60000),

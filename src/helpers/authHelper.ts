@@ -196,12 +196,14 @@ export class AuthHelper {
    * @param page - Playwright Page instance
    * @param context - Browser context for saving new auth state
    * @param authStatePath - Path to auth state file
+   * @param credentials - Optional credentials to use for re-authentication (defaults to EnvConfig)
    * @returns true if session was refreshed, false if already valid
    */
   static async ensureValidSession(
     page: Page,
     context: BrowserContext,
-    authStatePath: string
+    authStatePath: string,
+    credentials?: Partial<LoginCredentials>
   ): Promise<boolean> {
     const validation = await this.validateSession(page);
     
@@ -219,11 +221,11 @@ export class AuthHelper {
       // File may not exist
     }
     
-    // Perform fresh login on current page
+    // Perform fresh login on current page using provided credentials or defaults
     await this.login(page, {
-      email: EnvConfig.USERNAME,
-      password: EnvConfig.PASSWORD,
-      orgId: EnvConfig.ORG_ID
+      email: credentials?.email || EnvConfig.USERNAME,
+      password: credentials?.password || EnvConfig.PASSWORD,
+      orgId: credentials?.orgId || EnvConfig.ORG_ID
     });
     
     // Save new auth state

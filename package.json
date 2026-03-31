@@ -41,7 +41,8 @@
     "@types/pg": "^8.15.4",
     "allure-commandline": "^2.38.0",
     "allure-cucumberjs": "^3.6.0",
-    "cross-env": "^10.1.0"
+    "cross-env": "^10.1.0",
+    "xlsx": "^0.18.5"
   },
   "dependencies": {
     "@aws-sdk/rds-signer": "^3.840.0",
