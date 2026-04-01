@@ -48,7 +48,8 @@ export class BrowserManager {
           headless: EnvConfig.HEADLESS,
           args: [
             '--disable-blink-features=AutomationControlled',
-            '--force-device-scale-factor=1'
+            '--force-device-scale-factor=1',
+            '--high-dpi-support=1'
           ]
         });
     }
@@ -74,7 +75,8 @@ export class BrowserManager {
           headless: true,
           args: [
             '--disable-blink-features=AutomationControlled',
-            '--force-device-scale-factor=1'
+            '--force-device-scale-factor=1',
+            '--high-dpi-support=1'
           ]
         });
     }
