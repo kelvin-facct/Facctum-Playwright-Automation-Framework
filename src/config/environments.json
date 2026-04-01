@@ -6,6 +6,7 @@
     "PARALLEL": 0,
     "RETRY": 1,
     "RECORD_VIDEO": true,
+    "RESOLUTION": "1920x1080",
     "DB_PORT": 5432,
     "AWS_REGION": "us-east-1",
     "DB_USE_IAM_AUTH": false

@@ -26,6 +26,7 @@ interface EnvironmentConfig {
   TIMEOUT: number;
   EXTENDED_TIMEOUT: number;
   RECORD_VIDEO: boolean;
+  RESOLUTION: { width: number; height: number };
   PARALLEL: number;
   RETRY: number;
   VALIDATE_SESSION: boolean;
@@ -116,6 +117,16 @@ function loadConfig(): EnvironmentConfig {
     return parseInt(String(val), 10);
   };
 
+  // Parse resolution string (e.g., "1920x1080") into { width, height }
+  const getResolution = (key: string, defaultVal: string = "1920x1080"): { width: number; height: number } => {
+    const val = process.env[key] ?? merged[key] ?? defaultVal;
+    const match = String(val).match(/^(\d+)x(\d+)$/i);
+    if (match) {
+      return { width: parseInt(match[1], 10), height: parseInt(match[2], 10) };
+    }
+    return { width: 1920, height: 1080 };
+  };
+
   return {
     BASE_URL: get("BASE_URL"),
     API_URL: get("API_URL"),
@@ -129,6 +140,7 @@ function loadConfig(): EnvironmentConfig {
     TIMEOUT: getInt("TIMEOUT", 15000),
     EXTENDED_TIMEOUT: getInt("EXTENDED_TIMEOUT", 60000),
     RECORD_VIDEO: getBool("RECORD_VIDEO", true),
+    RESOLUTION: getResolution("RESOLUTION"),
     PARALLEL: getInt("PARALLEL", 0),
     RETRY: getInt("RETRY", 0),
     VALIDATE_SESSION: getBool("VALIDATE_SESSION", true),

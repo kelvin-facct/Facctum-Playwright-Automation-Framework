@@ -70,8 +70,9 @@ export class AuthHelper {
     const browser = await BrowserManager.launchBrowserHeadless();
     
     try {
+      const { width, height } = EnvConfig.RESOLUTION;
       const context = await browser.newContext({
-        viewport: { width: 1920, height: 1080 },
+        viewport: { width, height },
         deviceScaleFactor: 1
       });
       const page = await context.newPage();

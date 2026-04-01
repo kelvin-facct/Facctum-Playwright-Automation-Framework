@@ -24,12 +24,14 @@ export class ContextFactory {
    * @returns Promise resolving to a configured BrowserContext with auth state
    */
   static async createContextWithAuth(browser: Browser, authStatePath: string, videoDir?: string): Promise<BrowserContext> {
+    const { width, height } = EnvConfig.RESOLUTION;
+    
     const context = await browser.newContext({
-      viewport: { width: 1920, height: 1080 },
+      viewport: { width, height },
       deviceScaleFactor: 1,
 
       ...(EnvConfig.RECORD_VIDEO && videoDir && {
-        recordVideo: { dir: videoDir, size: { width: 1920, height: 1080 } }
+        recordVideo: { dir: videoDir, size: { width, height } }
       }),
 
       storageState: authStatePath
