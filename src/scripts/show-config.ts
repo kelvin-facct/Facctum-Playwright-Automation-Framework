@@ -17,6 +17,7 @@ console.log("USERNAME (Email):", EnvConfig.USERNAME);
 console.log("PASSWORD:", EnvConfig.PASSWORD ? "*".repeat(8) + "..." : "(not set)");
 console.log("\n--- Browser Settings ---");
 console.log("HEADLESS:", EnvConfig.HEADLESS);
+console.log("RESOLUTION:", `${EnvConfig.RESOLUTION.width}x${EnvConfig.RESOLUTION.height}`);
 console.log("TIMEOUT:", EnvConfig.TIMEOUT, "ms");
 console.log("PARALLEL:", EnvConfig.PARALLEL, EnvConfig.PARALLEL === 0 ? "(sequential)" : "workers");
 console.log("RETRY:", EnvConfig.RETRY, EnvConfig.RETRY === 0 ? "(no retries)" : "attempts");

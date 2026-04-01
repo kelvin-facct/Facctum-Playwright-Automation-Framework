@@ -74,6 +74,7 @@ Report locations:
 - `BROWSER` - Browser type (chromium, firefox, webkit)
 - `PARALLEL` - Number of parallel workers (0 = sequential)
 - `HEADLESS` - Run headless (true/false)
+- `RESOLUTION` - Browser viewport size (format: WIDTHxHEIGHT, default: 1920x1080)
 - `VALIDATE_SESSION` - Validate session before each scenario (true/false, default: true)
 
 ### Database
@@ -134,6 +135,9 @@ This displays the active values for key settings and reminds you of the priority
 ### .env.secrets (Local Credentials)
 Create `src/config/.env.secrets` for sensitive values:
 ```
+# Browser settings
+RESOLUTION=1920x1080  # Format: WIDTHxHEIGHT (e.g., 1280x720, 2560x1440)
+
 # App login credentials (multi-step login flow)
 APP_ORG_ID=your-org-id
 APP_USERNAME=your.email@example.com
