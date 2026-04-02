@@ -10,6 +10,7 @@ node_modules/
 # Test Reports & Artifacts
 reports/
 facctum-test/
+facctum-test-automation-main/
 
 # Secrets - never commit credentials
 src/config/.env.secrets
