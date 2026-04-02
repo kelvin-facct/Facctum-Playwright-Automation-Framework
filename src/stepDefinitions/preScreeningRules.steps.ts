@@ -20,13 +20,32 @@ let order_id: string;
 let name: string;
 let rule_id: string;
 
+/**
+ * Generates a timestamp string for unique identifiers.
+ * Format: YYYYMMDD_HHmmss (e.g., 20260402_143025)
+ */
+function getTimestamp(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const seconds = String(now.getSeconds()).padStart(2, "0");
+  return `${year}${month}${day}_${hours}${minutes}${seconds}`;
+}
+
 // Load test data from Excel (like Java's class-level initialization)
 function loadTestData(): void {
   const excel = new ExcelReader(TEST_DATA_PATH);
+  const timestamp = getTimestamp();
   
   // Test data - for adding new Pre-Screening Rule (row 1, columns 4-7)
-  ruleName = excel.getCellValue(SHEET_NAME, 1, 4);
-  orderId = excel.getCellValue(SHEET_NAME, 1, 5);
+  // Append timestamp to ruleName and orderId for uniqueness
+  const baseRuleName = excel.getCellValue(SHEET_NAME, 1, 4);
+  const baseOrderId = excel.getCellValue(SHEET_NAME, 1, 5);
+  ruleName = `${baseRuleName}_${timestamp}`;
+  orderId = `${baseOrderId}_${timestamp}`;
   description = excel.getCellValue(SHEET_NAME, 1, 6);
   value = excel.getCellValue(SHEET_NAME, 1, 7);
   
@@ -36,7 +55,7 @@ function loadTestData(): void {
   name = excel.getCellValue(SHEET_NAME, 1, 2);
   rule_id = excel.getCellValue(SHEET_NAME, 1, 3);
   
-  logger.info(`Loaded test data - ruleName: ${ruleName}, ruleNameRead: ${ruleNameRead}`);
+  logger.info(`Loaded test data - ruleName: ${ruleName} (with timestamp), ruleNameRead: ${ruleNameRead}`);
 }
 
 // ==================== Background Steps ====================
