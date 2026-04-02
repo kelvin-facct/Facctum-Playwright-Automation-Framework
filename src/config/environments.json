@@ -4,7 +4,7 @@
     "TIMEOUT": 30000,
     "EXTENDED_TIMEOUT": 60000,
     "PARALLEL": 0,
-    "RETRY": 0,
+    "RETRY": 1,
     "RECORD_VIDEO": true,
     "RESOLUTION": "1920x1080",
     "DB_PORT": 5432,

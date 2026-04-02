@@ -17,3 +17,21 @@ src/config/.env.secrets
 
 # Logs
 *.log
+
+# Temp files
+~$*
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.idea/
+*.iml
+.vscode/settings.json

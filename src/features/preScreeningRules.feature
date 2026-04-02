@@ -1,4 +1,4 @@
-@transactionCheck @org:equalsmoney
+@transactionCheck @org:QAAutomation
 Feature: Transaction Screening Navigation
   As a user of the Facctum platform
   I want to navigate to Customer Screening functionality
