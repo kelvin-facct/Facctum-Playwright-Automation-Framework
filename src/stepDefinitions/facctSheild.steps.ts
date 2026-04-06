@@ -41,11 +41,15 @@ function loadTestData(): void {
   const timestamp = getTimestamp();
   
   // Test data - for adding new Pre-Screening Rule (row 1, columns 4-7)
-  // Append timestamp to ruleName and orderId for uniqueness
+  // Append timestamp to ruleName for uniqueness
+  // orderId is a number field with max 7 digits, use last 7 digits of timestamp
   const baseRuleName = excel.getCellValue(SHEET_NAME, 1, 4);
-  const baseOrderId = excel.getCellValue(SHEET_NAME, 1, 5);
   ruleName = `${baseRuleName}_${timestamp}`;
-  orderId = `${baseOrderId}_${timestamp}`;
+  // Use last 7 digits: combine MMSS from time + random 3 digits for uniqueness
+  const now = new Date();
+  const mmss = String(now.getMinutes()).padStart(2, "0") + String(now.getSeconds()).padStart(2, "0");
+  const random = String(Math.floor(Math.random() * 1000)).padStart(3, "0");
+  orderId = `${mmss}${random}`; // 7 digits: MMSSxxx
   description = excel.getCellValue(SHEET_NAME, 1, 6);
   value = excel.getCellValue(SHEET_NAME, 1, 7);
   
@@ -55,7 +59,7 @@ function loadTestData(): void {
   name = excel.getCellValue(SHEET_NAME, 1, 2);
   rule_id = excel.getCellValue(SHEET_NAME, 1, 3);
   
-  logger.info(`Loaded test data - ruleName: ${ruleName} (with timestamp), ruleNameRead: ${ruleNameRead}`);
+  logger.info(`Loaded test data - ruleName: ${ruleName}, orderId: ${orderId}`);
 }
 
 // ==================== Background Steps ====================
@@ -192,19 +196,12 @@ Then("user validate the newly added Pre Screening Rule", async function (this: C
 });
 
 Then("user validate the edit icon button on Pre Screening Rule page", async function (this: CustomWorld) {
-  const preScreeningPage = new PreScreeningRulePage(this.page);
+  // Verify edit icon is NOT present in the DOM (rule is pending approval)
+  const editIcon = this.page.locator('tbody tr').first().locator('[title="Edit"]');
+  const editIconCount = await editIcon.count();
   
-  // Click edit icon
-  await preScreeningPage.clickEditIcon(0);
-  
-  // Validate edit popup is displayed
-  const cancelButton = this.page.locator('button:has-text("CANCEL")');
-  await cancelButton.waitFor({ state: "visible", timeout: 10000 });
-  assert.ok(await cancelButton.isVisible(), "Edit popup is not displayed");
-  
-  // Close edit popup
-  await cancelButton.click();
-  await this.page.waitForTimeout(500);
+  assert.strictEqual(editIconCount, 0, "Edit icon should NOT be present for a rule pending approval");
+  logger.info("Edit icon validation passed - edit icon is not present as expected");
 });
 
 // ==================== Logout and Approver Login ====================
