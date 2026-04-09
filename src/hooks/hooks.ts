@@ -291,47 +291,6 @@ function isParallelMode(): boolean {
 }
 
 /**
- * Performs one-time authentication and saves the session state.
- * Uses AuthHelper for reusable login logic.
- */
-async function ensureAuthenticated(): Promise<void> {
-  try {
-    await fs.access(authStatePath);
-    logger.info(`Auth state exists for ${env}/${browserType}, skipping login`);
-    return;
-  } catch {
-    // Auth state doesn't exist, need to login
-  }
-
-  logger.info(`Performing one-time login for ${env}/${browserType}...`);
-  
-  try {
-    await AuthHelper.loginAndSaveState(authStatePath);
-  } catch (error) {
-    const errorMsg = `
-╔════════════════════════════════════════════════════════════════╗
-║                    LOGIN FAILED                                ║
-╠════════════════════════════════════════════════════════════════╣
-║  Could not login to ${EnvConfig.BASE_URL}
-║  
-║  Org ID:   ${EnvConfig.ORG_ID}
-║  Username: ${EnvConfig.USERNAME}
-║  Password: ${"*".repeat(Math.min(EnvConfig.PASSWORD.length, 8))}...
-║  
-║  Please check:
-║  1. Credentials in .env.secrets or environments.json
-║  2. The application is accessible
-║  3. Org ID/Username/Password are correct
-║  
-║  Run 'npx ts-node src/scripts/show-config.ts' to see current config
-╚════════════════════════════════════════════════════════════════╝`;
-    
-    logger.error(errorMsg);
-    throw new Error(`LOGIN FAILED for user "${EnvConfig.USERNAME}" - Check credentials in .env.secrets or environments.json`);
-  }
-}
-
-/**
  * BeforeAll Hook - Runs once before all scenarios.
  * Note: Authentication is deferred to Before hook to support @org:xxx tag overrides.
  */

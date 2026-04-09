@@ -34,6 +34,11 @@ jobs:
         QA_APP_ORG_ID: ${{ secrets.QA_APP_ORG_ID }}
         QA_APP_USERNAME: ${{ secrets.QA_APP_USERNAME }}
         QA_APP_PASSWORD: ${{ secrets.QA_APP_PASSWORD }}
+        # Approver credentials (for approval workflows)
+        QA_APPROVER_USERNAME: ${{ secrets.QA_APPROVER_USERNAME }}
+        QA_APPROVER_PASSWORD: ${{ secrets.QA_APPROVER_PASSWORD }}
+        QA_APPROVER_ORG_ID: ${{ secrets.QA_APPROVER_ORG_ID }}
+        # Database credentials (optional)
         QA_DB_USER: ${{ secrets.QA_DB_USER }}
         QA_DB_PASSWORD: ${{ secrets.QA_DB_PASSWORD }}
     

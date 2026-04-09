@@ -116,6 +116,14 @@ Then("validate that the user is on the {string} page", async function (this: Cus
     // Verify we're on the dashboard/product page
     await this.page.waitForLoadState("networkidle");
     logger.info(`Validated user is on ${pageName} page`);
+  } else if (pageName === "Tasks") {
+    // Verify we're on the Tasks page - look for the visible Tasks heading
+    // The h1 element is hidden (opacity: 0), so we check for the visible path-label
+    const tasksHeading = this.page.locator('.path-label:has-text("Tasks")');
+    await tasksHeading.waitFor({ state: "visible", timeout: 15000 });
+    const isVisible = await tasksHeading.isVisible();
+    assert.ok(isVisible, "Expected to be on Tasks page");
+    logger.info(`Validated user is on ${pageName} page`);
   }
 });
 
@@ -310,6 +318,17 @@ Then("user validates the Pre Screening Rule is approved", async function (this: 
 });
 
 Then("user collapses the left panel", async function (this: CustomWorld) {
-  const dashboardPage = this.pageManager.getFacctumDashboardPage();
-  await dashboardPage.collapseLeftPanel();
+  // Check if we're on the Tasks page by looking for the expand-arrow element
+  const expandArrow = this.page.locator('.expand-arrow');
+  const isOnTasksPage = await expandArrow.isVisible({ timeout: 3000 }).catch(() => false);
+  
+  if (isOnTasksPage) {
+    // Use TasksPage for collapsing on Tasks page
+    const tasksPage = this.pageManager.getTasksPage();
+    await tasksPage.collapseLeftPanel();
+  } else {
+    // Use FacctumDashboardPage for other pages
+    const dashboardPage = this.pageManager.getFacctumDashboardPage();
+    await dashboardPage.collapseLeftPanel();
+  }
 });

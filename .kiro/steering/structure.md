@@ -15,7 +15,15 @@ src/
 ├── pages/            # Page Object Model classes
 │   ├── PageManager.ts        # Factory for lazy-loading page objects
 │   ├── LoginPage.ts          # Login flow page object
-│   └── FacctumDashboardPage.ts  # Dashboard/Home page object
+│   ├── FacctumDashboardPage.ts  # Dashboard/Home page object
+│   ├── PreScreeningRulePage.ts  # Pre-screening rules page object
+│   ├── ListManagementPage.ts    # List management page object
+│   └── TasksPage.ts          # Tasks page for record approval workflows
+│                             # Methods: claimRecord, acceptRecord(comment?), rejectRecord(comment?), 
+│                             #          unclaimRecord, claimAndAcceptRecord
+│                             # Pagination: clickDoubleArrowRight, clickDoubleArrowLeft, selectLastRecordCheckbox
+│                             # Filters: clickUnclaimedFilter, clickClaimedFilter
+│                             # Note: acceptRecord/rejectRecord handle the comment dialog automatically
 │
 ├── helpers/          # Reusable utilities
 │   ├── authHelper.ts         # Reusable authentication functions
@@ -49,8 +57,7 @@ src/
     ├── run-test.js              # Run specific feature files
     ├── list-envs.ts             # List available environments
     ├── show-config.ts           # Display current configuration
-    ├── test-dbQuery.ts          # Test database connectivity
-    └── read-test-data.ts        # Inspect Excel test data files
+    └── test-dbQuery.ts          # Test database connectivity
 
 reports/              # Test artifacts (gitignored)
 ├── {env}/            # Environment-specific reports (qa, dev, stage, etc.)
@@ -267,7 +274,7 @@ Utility for reading test data from Excel files (.xlsx, .xls) for data-driven tes
 import { ExcelReader, readExcelSheet } from "../helpers/excelReader";
 
 // Create reader instance
-const reader = new ExcelReader("src/test/resources/testData/TestData.xlsx");
+const reader = new ExcelReader("src/resources/testData/TestData.xlsx");
 
 // Get sheet data as array of objects (first row as headers)
 const testData = reader.getSheetData<{ Name: string; Email: string }>("Sheet1");

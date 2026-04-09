@@ -7,10 +7,21 @@ Automated browser testing for the Facctum Platform web application, covering:
 - User authentication and login flows
 - Dashboard functionality
 - Case management workflows
-- Screening operations
+- Screening operations (Customer, Transaction)
+- Pre-screening rules management
 - List management
+- Approval workflows (maker/approver)
 
 ## Target Application
 - Web-based AML compliance platform
 - Requires authenticated access
-- Multi-environment support (QA, Dev, Stage, UAT, Prod)
+- Multi-environment support (QA, Dev, Stage, Stage-UK, Stage-IND, UAT, Prod)
+- Multi-tenant architecture with organization-based access
+
+## Key Modules
+- **List Management** - Commercial and internal list management
+- **Tasks** - Record approval workflows (Pending L1/L2, claim, accept/reject)
+- **Customer Screening** - Customer due diligence screening
+- **Transaction Screening** - Transaction monitoring and screening
+- **Pre-Screening Rules** - Rule configuration for automated screening
+- **Transaction Monitoring** - Real-time transaction monitoring

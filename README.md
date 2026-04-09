@@ -63,6 +63,11 @@ QA_APP_PASSWORD=your-password
 # STAGE_APP_USERNAME=stage.user@example.com
 # STAGE_APP_PASSWORD=stage-password
 
+# Approver credentials (for approval workflows)
+# QA_APPROVER_USERNAME=approver@example.com
+# QA_APPROVER_PASSWORD=approver-password
+# QA_APPROVER_ORG_ID=approver-org-id  # Optional: defaults to maker's org
+
 # QA database credentials (default)
 QA_DB_USER=dbuser
 QA_DB_PASSWORD=dbpassword
@@ -350,6 +355,29 @@ await AuthHelper.switchOrganization(this.context, this.page, {
 });
 ```
 
+### Approver Credentials
+
+For approval workflows (maker/approver pattern), configure approver credentials in `.env.secrets`:
+
+```bash
+# Approver credentials
+QA_APPROVER_USERNAME=approver@example.com
+QA_APPROVER_PASSWORD=approver-password
+QA_APPROVER_ORG_ID=approver-org-id  # Optional: defaults to maker's org from @org tag
+```
+
+Use the generic login step to switch between roles:
+
+```gherkin
+# Login as maker (uses APP_* credentials)
+When user logs in as "maker"
+
+# Login as approver (uses APPROVER_* credentials)
+When user logs in as "approver"
+```
+
+Access approver credentials in step definitions via `EnvConfig.APPROVER_USERNAME`, `EnvConfig.APPROVER_PASSWORD`, and `EnvConfig.APPROVER_ORG_ID`.
+
 ## Database Testing
 
 ### Database Configuration
@@ -420,6 +448,9 @@ jobs:
           QA_APP_ORG_ID: ${{ secrets.QA_APP_ORG_ID }}
           QA_APP_USERNAME: ${{ secrets.QA_APP_USERNAME }}
           QA_APP_PASSWORD: ${{ secrets.QA_APP_PASSWORD }}
+          # Approver credentials (for approval workflows)
+          QA_APPROVER_USERNAME: ${{ secrets.QA_APPROVER_USERNAME }}
+          QA_APPROVER_PASSWORD: ${{ secrets.QA_APPROVER_PASSWORD }}
           HEADLESS: true
       - uses: actions/upload-artifact@v4
         if: always()

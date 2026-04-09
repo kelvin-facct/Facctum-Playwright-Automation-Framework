@@ -95,6 +95,9 @@ pipeline {
                     string(credentialsId: "${params.ENV.toUpperCase()}_APP_ORG_ID", variable: "${params.ENV.toUpperCase()}_APP_ORG_ID"),
                     string(credentialsId: "${params.ENV.toUpperCase()}_APP_USERNAME", variable: "${params.ENV.toUpperCase()}_APP_USERNAME"),
                     string(credentialsId: "${params.ENV.toUpperCase()}_APP_PASSWORD", variable: "${params.ENV.toUpperCase()}_APP_PASSWORD"),
+                    // Optional: Approver credentials (uncomment if needed for approval workflows)
+                    // string(credentialsId: "${params.ENV.toUpperCase()}_APPROVER_USERNAME", variable: "${params.ENV.toUpperCase()}_APPROVER_USERNAME"),
+                    // string(credentialsId: "${params.ENV.toUpperCase()}_APPROVER_PASSWORD", variable: "${params.ENV.toUpperCase()}_APPROVER_PASSWORD"),
                     // Optional: Database credentials (uncomment if needed)
                     // string(credentialsId: "${params.ENV.toUpperCase()}_DB_USER", variable: "${params.ENV.toUpperCase()}_DB_USER"),
                     // string(credentialsId: "${params.ENV.toUpperCase()}_DB_PASSWORD", variable: "${params.ENV.toUpperCase()}_DB_PASSWORD")

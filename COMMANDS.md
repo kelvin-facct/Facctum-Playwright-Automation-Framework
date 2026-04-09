@@ -8,7 +8,9 @@
 | `npm run test:file <filename>` | Run specific feature file |
 | `npm run test:ci` | Run tests only (no report) - for CI/CD |
 | `npm run test:fail-fast` | Stop on first failure |
-| `npm run test:parallel` | Run with 2 parallel workers |
+| `npm run test:parallel` | Run with 2 parallel workers (scenario-level) |
+| `npm run test:parallel:features` | Run features in parallel (scenarios sequential within each) |
+| `npm run test:parallel:features:report` | Run features in parallel + open Allure report |
 
 ## Browser Selection
 
@@ -32,7 +34,8 @@
 | `ENV` | qa, dev, stage, uat, prod | Target environment |
 | `BROWSER` | chromium, firefox, webkit | Browser to use |
 | `HEADLESS` | true, false | Run without browser UI |
-| `PARALLEL` | 0, 2, 4... | Number of parallel workers (0 = sequential) |
+| `PARALLEL` | 0, 2, 4... | Number of parallel workers for scenario-level parallelism (0 = sequential) |
+| `WORKERS` | 1, 2, 4... | Number of workers for feature-level parallelism (default: min(CPU cores, 2)) |
 | `RETRY` | 0, 1, 2... | Number of retry attempts for failed scenarios (0 = no retries) |
 | `VALIDATE_SESSION` | true, false | Validate session before each scenario (default: true) |
 
@@ -60,6 +63,33 @@ $env:ENV="dev"; npm test
 $env:HEADLESS="true"; npm test
 $env:BROWSER="firefox"; $env:ENV="stage"; npm test
 $env:RETRY="2"; npm test
+```
+
+## Reports
+
+## Parallel Execution Modes
+
+Two parallel execution strategies are available:
+
+### Scenario-Level Parallelism (`test:parallel`)
+- Runs individual scenarios in parallel across workers
+- Best for independent scenarios that don't share state
+- Use `PARALLEL` env var to control worker count
+
+### Feature-Level Parallelism (`test:parallel:features`)
+- Runs feature files in parallel, but scenarios within each file run sequentially
+- Best for features with dependent scenarios (e.g., create → verify → delete flows)
+- Use `WORKERS` env var to control worker count (default: min of CPU cores or 2)
+
+```bash
+# Scenario-level: 4 parallel workers
+PARALLEL=4 npm run test:parallel
+
+# Feature-level: 3 parallel workers
+WORKERS=3 npm run test:parallel:features
+
+# Feature-level with report
+npm run test:parallel:features:report
 ```
 
 ## Reports
@@ -143,8 +173,14 @@ HEADLESS=true npm test
 # CI/CD: Headless, sequential, no report (faster)
 HEADLESS=true npm run test:ci
 
-# CI/CD: Headless, parallel, with report
+# CI/CD: Headless, scenario-level parallel, with report
 HEADLESS=true npm run test:parallel && npm run allure:generate
+
+# CI/CD: Headless, feature-level parallel (keeps scenarios sequential within features)
+HEADLESS=true npm run test:parallel:features:report
+
+# Feature-level parallel with custom worker count
+WORKERS=4 npm run test:parallel:features
 
 # CI/CD: Headless with retries for flaky tests
 HEADLESS=true RETRY=1 npm test

@@ -9,6 +9,8 @@
     "test:ci": "cucumber-js --config src/config/cucumber.js",
     "test:fail-fast": "cucumber-js --config src/config/cucumber.js --fail-fast",
     "test:parallel": "cross-env PARALLEL=2 cucumber-js --config src/config/cucumber.js",
+    "test:parallel:features": "node src/scripts/run-parallel-features.js",
+    "test:parallel:features:report": "node src/scripts/run-parallel-features.js && npm run allure:report",
     "test:chrome": "cross-env BROWSER=chromium cucumber-js --config src/config/cucumber.js",
     "test:firefox": "cross-env BROWSER=firefox cucumber-js --config src/config/cucumber.js",
     "test:webkit": "cross-env BROWSER=webkit cucumber-js --config src/config/cucumber.js",

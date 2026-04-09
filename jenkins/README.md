@@ -112,6 +112,15 @@ For database credentials (if needed):
 | `DEV_DB_USER` | DEV database username (optional) |
 | `DEV_DB_PASSWORD` | DEV database password (optional) |
 
+For approver credentials (if using approval workflows):
+| Credential ID | Description |
+|---------------|-------------|
+| `QA_APPROVER_USERNAME` | QA approver email |
+| `QA_APPROVER_PASSWORD` | QA approver password |
+| `QA_APPROVER_ORG_ID` | QA approver org (optional, defaults to maker's org) |
+| `DEV_APPROVER_USERNAME` | DEV approver email (optional) |
+| `DEV_APPROVER_PASSWORD` | DEV approver password (optional) |
+
 The Jenkinsfile automatically loads credentials based on the selected `ENV` parameter. If environment-specific credentials aren't found, QA credentials are used as fallback.
 
 ## Running Tests

@@ -37,8 +37,14 @@ npm run test:ci
 # Run with fail-fast (stop on first failure)
 npm run test:fail-fast
 
-# Run in parallel (2 workers)
+# Run in parallel (scenario-level, 2 workers)
 npm run test:parallel
+
+# Run feature files in parallel (scenarios within each file run sequentially)
+npm run test:parallel:features              # Uses CPU cores or 2 workers
+npm run test:parallel:features -- 3         # Specify 3 workers
+WORKERS=4 npm run test:parallel:features    # Via environment variable
+npm run test:parallel:features:report       # With Allure report
 
 # Run on specific browser
 npm run test:chrome
@@ -70,12 +76,14 @@ Report locations:
 - `reports/{env}/cucumber-report.json` - Cucumber JSON report
 
 ### Environment Variables
-- `ENV` - Target environment (qa, dev, stage)
+- `ENV` - Target environment (qa, dev, stage, stage-uk, stage-ind, uat, prod)
 - `BROWSER` - Browser type (chromium, firefox, webkit)
-- `PARALLEL` - Number of parallel workers (0 = sequential)
+- `PARALLEL` - Number of parallel workers for scenario-level parallelism (0 = sequential)
+- `WORKERS` - Number of workers for feature-level parallelism (default: min of CPU cores or 2)
 - `HEADLESS` - Run headless (true/false)
 - `RESOLUTION` - Browser viewport size (format: WIDTHxHEIGHT, default: 1920x1080)
 - `VALIDATE_SESSION` - Validate session before each scenario (true/false, default: true)
+- `RETRY` - Number of retry attempts for failed scenarios (default: 0)
 
 ### Database
 ```bash

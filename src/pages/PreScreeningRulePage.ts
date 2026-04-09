@@ -35,9 +35,9 @@ export class PreScreeningRulePage {
       'span:has-text("Pre-screening rules")'
     );
 
-    // Tabs
-    this.approvedTab = this.page.locator('button:has-text("Approved"), button:has-text("APPROVED"), button:has-text("All")');
-    this.pendingTab = this.page.locator('button:has-text("Pending")');
+    // Tabs - using role="tab" and aria-label for reliability
+    this.approvedTab = this.page.locator('button[role="tab"][aria-label*="Approved"]');
+    this.pendingTab = this.page.locator('button[role="tab"][aria-label*="Pending"]');
 
     // Action bar - Java uses: //div[@class='search-bar']/..//input[@id=':r7:']
     this.searchInput = this.page.locator('.search-bar input, input[placeholder*="Search"]');
@@ -68,32 +68,17 @@ export class PreScreeningRulePage {
   // ==================== Tab Navigation ====================
 
   async clickApprovedTab(): Promise<void> {
-    await this.approvedTab.first().click();
+    await this.page.waitForTimeout(1000);
+    await this.approvedTab.click();
     await this.page.waitForLoadState("networkidle");
     logger.info("Clicked Approved tab");
   }
 
   async clickPendingTab(): Promise<void> {
-    // Try multiple locators like Java does
-    const pendingLocators = [
-      'button:has-text("Pending Approval")',
-      'button:has-text("PENDING APPROVAL")',
-      'button:has-text("Pending L2")',
-      'button:has-text("Pending")',
-      '[role="tablist"] button:nth-child(2)',
-    ];
-    
-    for (const locator of pendingLocators) {
-      const element = this.page.locator(locator).first();
-      if (await element.isVisible({ timeout: 2000 }).catch(() => false)) {
-        logger.info(`Found Pending tab using locator: ${locator}`);
-        await element.click();
-        await this.page.waitForLoadState("networkidle");
-        return;
-      }
-    }
-    
-    throw new Error("Could not find Pending Approval tab with any locator strategy");
+    await this.page.waitForTimeout(1000);
+    await this.pendingTab.click();
+    await this.page.waitForLoadState("networkidle");
+    logger.info("Clicked Pending tab");
   }
 
   // ==================== Search ====================
@@ -313,38 +298,22 @@ export class PreScreeningRulePage {
   }
 
   async approveRule(): Promise<void> {
-    // Try multiple locators like Java does
-    const approveButtonXPaths = [
-      '[role="contentinfo"] button:has-text("APPROVE")',
-      'button:has-text("APPROVE")',
-      '[role="contentinfo"] button:first-child',
-    ];
-    
-    let approveButton: Locator | null = null;
-    for (const locator of approveButtonXPaths) {
-      const element = this.page.locator(locator).first();
-      if (await element.isVisible({ timeout: 2000 }).catch(() => false)) {
-        logger.info(`Found Approve button using locator: ${locator}`);
-        approveButton = element;
-        break;
-      }
-    }
-    
-    if (!approveButton) {
-      throw new Error("Approve button not found in the rule detail popup");
-    }
-    
+    // Click APPROVE button in the drawer footer
+    const approveButton = this.page.locator('button[aria-label="APPROVE"]').first();
     await approveButton.click();
-    await this.page.waitForTimeout(3000);
+    await this.page.waitForTimeout(1000);
     
-    // Handle approval confirmation dialog if present
-    const confirmBtn = this.page.locator('button:has-text("CONFIRM"), button:has-text("YES"), button:has-text("OK"), button:has-text("SUBMIT")');
-    if (await confirmBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await confirmBtn.click();
-      await this.page.waitForTimeout(3000);
-    }
+    // Fill the required Comments field in the confirmation popup
+    const commentsField = this.page.locator('textarea[placeholder="Comments"]');
+    await commentsField.waitFor({ state: "visible", timeout: 5000 });
+    await commentsField.fill("Approved by automation test");
     
-    logger.info("Approved rule");
+    // Click the APPROVE button in the confirmation popup (second APPROVE button)
+    const confirmApproveButton = this.page.locator('button[aria-label="APPROVE"]').nth(1);
+    await confirmApproveButton.click();
+    await this.page.waitForTimeout(2000);
+    
+    logger.info("Approved rule with comments");
   }
 
   // ==================== Helpers ====================
