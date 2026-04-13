@@ -394,3 +394,51 @@ Key methods:
 - `getRowCount(sheet)` / `getColumnCount(sheet)` - Get dimensions
 
 Test data files location: `src/resources/testData/`
+
+### Help Guide Steps (helpGuide.steps.ts)
+Steps for testing the Help Guide panel and documentation pages.
+
+```gherkin
+# Open the Help Guide panel (click the help icon)
+When user opens the Help Guide panel
+When user clicks on the help icon in the header
+
+# Verify panel is displayed
+Then the Help Guide panel should be displayed
+
+# Verify panel title
+And the Help Guide panel title should be "Facctum Platform Guide"
+
+# Verify content contains expected text (data table)
+And the Help Guide content should contain the following text:
+  | text                                                         |
+  | Platform Portal is the central administrative hub            |
+  | Login and Access                                             |
+  | Password Requirements                                        |
+
+# Expand Help Guide to new tab (click the launch/expand icon)
+When user clicks on the expand icon to open Help Guide in new tab
+
+# Close the Help Guide panel
+When user clicks the CLOSE button on the Help Guide panel
+When user closes the Help Guide panel
+
+# Verify panel is closed
+Then the Help Guide panel should be closed
+
+# Verify all sidebar links open correctly with expected content
+Then user should verify all sidebar links open correctly with expected content:
+  | linkText          | expectedTexts                                    |
+  | Platform Portal   | Platform Portal,user management,Login and Access |
+  | Tasks             | Tasks,workflow,permissions                       |
+  | List Management   | List Management,Commercial Lists                 |
+```
+
+Key details:
+- Content verification fetches iframe content and checks for expected text strings
+- Expand icon step stores the new page in `scenarioContext.get("helpGuidePage")`
+- Uses JavaScript evaluation to click sidebar links (handles hidden/collapsed links reliably)
+- Page content is verified directly from the rendered page
+- Text matching is case-sensitive for content verification
+- Help Guide page is only closed if it was opened in a new tab (preserves main page)
+- Results are attached to Allure report as JSON

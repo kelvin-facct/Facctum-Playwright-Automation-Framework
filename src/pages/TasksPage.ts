@@ -330,6 +330,10 @@ export class TasksPage {
       logger.info(`Potential footer elements: ${allDivs.slice(0, 5).join(', ')}`);
     }
     
+    // Debug: Check if any checkbox is actually selected
+    const selectedCheckboxes = await this.page.locator('tbody.MuiTableBody-root .facct-checkbox[aria-pressed="true"]').count();
+    logger.info(`Number of selected checkboxes: ${selectedCheckboxes}`);
+    
     // Try multiple selectors for the Claim button (matching Java: //button[contains(@id,'claim-btn')]//span)
     const claimSelectors = [
       '#task-footer-claim-btn',
@@ -394,7 +398,7 @@ export class TasksPage {
         );
         logger.warn(`Buttons with 'btn' in ID: ${allBtnIds.join(', ') || 'NONE'}`);
         
-        logger.warn("Record may be claimed by another user or no unclaimed records available");
+        throw new Error("CLAIM button not found - record may be claimed by another user or no unclaimed records available");
       }
     }
   }
