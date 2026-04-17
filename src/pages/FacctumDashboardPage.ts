@@ -21,11 +21,11 @@ export class FacctumDashboardPage {
   constructor(private page: Page) {
     this.actions = new PlaywrightActions(page);
     
-    // Initialize card locators using nth selector for reliability
-    this.listManagementCard = page.locator('.facct-rawhtml').nth(0);
-    this.customerScreeningCard = page.locator('.facct-rawhtml').nth(1);
-    this.transactionScreeningCard = page.locator('.facct-rawhtml').nth(2);
-    this.transactionMonitoringCard = page.locator('.facct-rawhtml').nth(3);
+    // Initialize card locators using text-based selectors for reliability
+    this.listManagementCard = page.locator('.product-card:has-text("List")').first();
+    this.customerScreeningCard = page.locator('.product-card:has-text("Customer")').first();
+    this.transactionScreeningCard = page.locator('.product-card:has-text("Transaction Screening")').first();
+    this.transactionMonitoringCard = page.locator('.product-card:has-text("Transaction Monitoring")').first();
 
     // Initialize Help Guide panel locators
     this.helpIconHeader = page.locator('.facct-guidedocs svg, [data-testid="HelpOutlineIcon"]').first();

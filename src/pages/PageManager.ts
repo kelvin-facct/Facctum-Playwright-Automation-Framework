@@ -4,6 +4,7 @@ import { FacctumDashboardPage } from "./FacctumDashboardPage";
 import { PreScreeningRulePage } from "./PreScreeningRulePage";
 import { ListManagementPage } from "./ListManagementPage";
 import { TasksPage } from "./TasksPage";
+import { IBLDedupPage } from "./IBLDedupPage";
 
 /**
  * PageManager - Factory class for lazy-loading and caching page objects.
@@ -17,6 +18,7 @@ export class PageManager {
   private preScreeningRulePage?: PreScreeningRulePage;
   private listManagementPage?: ListManagementPage;
   private tasksPage?: TasksPage;
+  private iblDedupPage?: IBLDedupPage;
 
   constructor(page: Page) {
     this.page = page;
@@ -55,5 +57,12 @@ export class PageManager {
       this.tasksPage = new TasksPage(this.page);
     }
     return this.tasksPage;
+  }
+
+  getIBLDedupPage(): IBLDedupPage {
+    if (!this.iblDedupPage) {
+      this.iblDedupPage = new IBLDedupPage(this.page);
+    }
+    return this.iblDedupPage;
   }
 }
