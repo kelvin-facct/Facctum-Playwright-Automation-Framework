@@ -12,9 +12,9 @@
 - `@playwright/test` - Browser automation
 - `allure-cucumberjs` - Allure report integration
 - `ts-node` - TypeScript execution
-
 - `cross-env` - Cross-platform env variables
 - `pg` - PostgreSQL client for database operations
+- `mongodb` - MongoDB driver for database validation
 - `@aws-sdk/rds-signer` - AWS RDS IAM authentication
 - `xlsx` - Excel file reading for data-driven testing
 
@@ -22,6 +22,9 @@
 
 ### Running Tests
 ```bash
+# PREFERRED: Run tests with tags on QA environment (with Allure report)
+npm run test:qa -- --tags "@TagName"
+
 # Run all tests and open Allure report (default: QA environment, Chromium)
 npm test
 
@@ -32,7 +35,7 @@ npm run test:file src/features/login.feature  # full path
 npm run test:file login exploratory        # multiple files
 
 # Run tests only (no report) - for CI/CD pipelines
-npm run test:ci
+npm run test:ci -- --tags "@TagName"
 
 # Run with fail-fast (stop on first failure)
 npm run test:fail-fast
@@ -58,6 +61,11 @@ npm run test:dev
 
 ### Reports
 Reports are now organized by environment (e.g., `reports/qa/`, `reports/dev/`).
+
+```bash
+# Open latest QA Allure report (ALWAYS use after tests finish)
+npm run allure:report
+```
 
 ```bash
 # Generate and open Allure report (uses current ENV)
@@ -91,6 +99,12 @@ Report locations:
 npm run db:test
 ```
 
+### MongoDB
+```bash
+# Test MongoDB connection
+npx ts-node src/scripts/test-mongo.ts
+```
+
 ### Database Environment Variables
 - `DB_HOST` - Database hostname
 - `DB_PORT` - Database port (default: 5432)
@@ -99,6 +113,15 @@ npm run db:test
 - `DB_PASSWORD` - Database password (when not using IAM auth)
 - `DB_USE_IAM_AUTH` - Use AWS IAM authentication (true/false)
 - `AWS_REGION` - AWS region for IAM auth (default: us-east-1)
+
+### MongoDB Environment Variables
+- `MONGO_HOST` - MongoDB hostname (default: localhost)
+- `MONGO_PORT` - MongoDB port (default: 27023)
+- `MONGO_DATABASE` - MongoDB database name (default: screenDB)
+- `MONGO_USERNAME` - MongoDB username (optional, enables auth if set)
+- `MONGO_PASSWORD` - MongoDB password (optional)
+- `MONGO_TLS_ENABLED` - Enable TLS connection (true/false, default: false)
+- `MONGO_VALIDATION` - Enable MongoDB validation for UI count verification (true/false, default: true). Set to `false` to disable.
 
 ## Configuration Files
 - `src/config/cucumber.js` - Cucumber configuration
@@ -176,6 +199,15 @@ QA_DB_HOST=qa-db.example.com
 QA_DB_NAME=facctum_qa
 DEV_DB_HOST=dev-db.example.com
 DEV_DB_NAME=facctum_dev
+
+# MongoDB credentials (for UI data validation)
+MONGO_HOST=localhost
+MONGO_PORT=27023
+MONGO_DATABASE=screenDB
+MONGO_USERNAME=mongouser
+MONGO_PASSWORD=mongopassword
+# MONGO_TLS_ENABLED=true  # Uncomment for TLS connections
+# MONGO_VALIDATION=false  # MongoDB validation is enabled by default; set to false to disable
 ```
 
 #### Credential Resolution Priority

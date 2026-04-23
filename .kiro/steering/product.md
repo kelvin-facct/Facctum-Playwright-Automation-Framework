@@ -17,6 +17,7 @@ Automated browser testing for the Facctum Platform web application, covering:
 - Requires authenticated access
 - Multi-environment support (QA, Dev, Stage, Stage-UK, Stage-IND, UAT, Prod)
 - Multi-tenant architecture with organization-based access
+- Supports `@org:xxx` tags on scenarios to test against different organizations (e.g., `@org:facctum`)
 
 ## Key Modules
 - **List Management** - Commercial and internal list management
@@ -25,3 +26,5 @@ Automated browser testing for the Facctum Platform web application, covering:
 - **Transaction Screening** - Transaction monitoring and screening
 - **Pre-Screening Rules** - Rule configuration for automated screening
 - **Transaction Monitoring** - Real-time transaction monitoring
+- **IBL Deduplication** - Internal Block List duplicate record verification (Watchlist → Internal List → Add record → Verify duplicates)
+- **UK Sanctions (Regulatory List)** - UK Sanctions list viewing with advanced filtering (Watchlist → Regulatory List → UK SANCTIONS → Filter by Designated Date, Id Type, Program Source, Regime Name, Type → Download as Excel/TSV)

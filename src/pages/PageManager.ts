@@ -5,6 +5,7 @@ import { PreScreeningRulePage } from "./PreScreeningRulePage";
 import { ListManagementPage } from "./ListManagementPage";
 import { TasksPage } from "./TasksPage";
 import { IBLDedupPage } from "./IBLDedupPage";
+import { UKSANCTIONSadvfilterPage } from "./UKSANCTIONSadvfilterPage";
 
 /**
  * PageManager - Factory class for lazy-loading and caching page objects.
@@ -19,6 +20,7 @@ export class PageManager {
   private listManagementPage?: ListManagementPage;
   private tasksPage?: TasksPage;
   private iblDedupPage?: IBLDedupPage;
+  private ukSanctionsAdvFilterPage?: UKSANCTIONSadvfilterPage;
 
   constructor(page: Page) {
     this.page = page;
@@ -64,5 +66,12 @@ export class PageManager {
       this.iblDedupPage = new IBLDedupPage(this.page);
     }
     return this.iblDedupPage;
+  }
+
+  getUKSanctionsAdvFilterPage(): UKSANCTIONSadvfilterPage {
+    if (!this.ukSanctionsAdvFilterPage) {
+      this.ukSanctionsAdvFilterPage = new UKSANCTIONSadvfilterPage(this.page);
+    }
+    return this.ukSanctionsAdvFilterPage;
   }
 }

@@ -418,6 +418,62 @@ await this.db.disconnect();
 npm run db:test
 ```
 
+## MongoDB Testing
+
+MongoDB is used for validating UI data against the database (e.g., UK SANCTIONS record counts).
+
+### MongoDB Configuration
+
+Add to `.env.secrets`:
+
+```bash
+# MongoDB credentials (for UI data validation)
+MONGO_HOST=localhost
+MONGO_PORT=27023
+MONGO_DATABASE=screenDB
+MONGO_USERNAME=mongouser
+MONGO_PASSWORD=mongopassword
+MONGO_TLS_ENABLED=true
+# MONGO_VALIDATION=false  # Set to false to disable MongoDB validation
+```
+
+### SSH Tunnel Setup
+
+MongoDB connections typically require an SSH tunnel to the database server. The helper automatically adds `directConnection=true` to the connection URI for reliable SSH tunnel connections.
+
+1. Start your SSH tunnel (e.g., via AWS Session Manager):
+   ```bash
+   # Example: Forward local port 27023 to MongoDB server
+   aws ssm start-session --target <instance-id> --document-name AWS-StartPortForwardingSession --parameters "localPortNumber=27023,portNumber=27017"
+   ```
+
+2. Configure `.env.secrets` with `localhost` and the tunnel port
+
+### Usage in Tests
+
+```typescript
+import { MongoDBHelper, UKSanctionsMongoQueries } from "../helpers/mongoHelper";
+
+const mongo = new MongoDBHelper();
+await mongo.connect();
+
+// UK Sanctions specific queries
+const ukSanctions = new UKSanctionsMongoQueries(mongo);
+const activeCount = await ukSanctions.getActiveRecordsWithIdTypeCount();
+
+// Validate UI count against database
+const validation = await ukSanctions.validateUICount(uiCount);
+// Returns: { passed: boolean, uiCount: number, dbCount: number, message: string }
+
+await mongo.disconnect();
+```
+
+### Test MongoDB Connection
+
+```bash
+npx ts-node src/scripts/test-mongo.ts
+```
+
 ## CI/CD Integration
 
 ### Jenkins

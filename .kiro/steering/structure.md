@@ -18,12 +18,31 @@ src/
 │   ├── FacctumDashboardPage.ts  # Dashboard/Home page object
 │   ├── PreScreeningRulePage.ts  # Pre-screening rules page object
 │   ├── ListManagementPage.ts    # List management page object
-│   └── TasksPage.ts          # Tasks page for record approval workflows
-│                             # Methods: claimRecord, acceptRecord(comment?), rejectRecord(comment?), 
-│                             #          unclaimRecord, claimAndAcceptRecord
-│                             # Pagination: clickDoubleArrowRight, clickDoubleArrowLeft, selectLastRecordCheckbox
-│                             # Filters: clickUnclaimedFilter, clickClaimedFilter
-│                             # Note: acceptRecord/rejectRecord handle the comment dialog automatically
+│   ├── TasksPage.ts          # Tasks page for record approval workflows
+│   │                         # Methods: claimRecord, acceptRecord(comment?), rejectRecord(comment?), 
+│   │                         #          unclaimRecord, claimAndAcceptRecord
+│   │                         # Pagination: clickDoubleArrowRight, clickDoubleArrowLeft, selectLastRecordCheckbox
+│   │                         # Filters: clickUnclaimedFilter, clickClaimedFilter
+│   │                         # Note: acceptRecord/rejectRecord handle the comment dialog automatically
+│   ├── IBLDedupPage.ts       # IBL (Internal Block List) Deduplication page object
+│   │                         # Flow: Navigate to Internal List → Search list → Add single record → 
+│   │                         #       Enter name → Verify duplicates → View duplicate records
+│   │                         # Key methods: navigateToInternalList, searchAndOpenList, openSingleRecordForm,
+│   │                         #              enterName, clickVerifyDuplicate, verifyDuplicatesPageIsOpen,
+│   │                         #              clickEachRecordIdAndVerify, performDedupVerification,
+│   │                         #              clickCloseOnDuplicatesModal, clickModifyAttributes,
+│   │                         #              clickRecordId (alias), clickRecordIdAndGetNewTab (opens record in new tab, returns Page)
+│   │                         # Constants: LIST_NAME ("Facctum IBL"), NAME (test entity name)
+│   └── UKSANCTIONSadvfilterPage.ts  # UK Sanctions advanced filter page object
+│                             # Flow: Watchlist → Regulatory List → UK SANCTIONS → Filter/Download records
+│                             # Tabs: Records, Downloads, Active, Error, Deleted
+│                             # Delta view tabs: New, Amended, Deleted, Stable, Error
+│                             # Filter categories: Designated Date, Id Type, Program Source, Regime Name, Type
+│                             # Download formats: Excel (.xlsx), Tab separated (.tsv)
+│                             # Key methods: applyUKSanctionsFilter (main orchestration across all tabs),
+│                             #              applyFiltersForTab (apply individual filters for a specific tab),
+│                             #              checkDownloadStatus (verify download completion and download file)
+│                             # Key locators: filterButton, filterPanel, applyButton, downloadButton
 │
 ├── helpers/          # Reusable utilities
 │   ├── authHelper.ts         # Reusable authentication functions
@@ -32,6 +51,7 @@ src/
 │   ├── database.ts           # PostgreSQL database helper (IAM + password auth)
 │   ├── dbQuery.ts            # Database queries with auto SSM tunnel management
 │   ├── excelReader.ts        # Excel file reader for data-driven testing
+│   ├── mongoHelper.ts        # MongoDB helper for UI data validation against MongoDB
 │   ├── playwrightActions.ts  # Wrapper for common Playwright operations
 │   ├── scenarioContext.ts    # Cross-step data sharing
 │   └── testDataStore.ts      # Persist data across scenarios via JSON file
@@ -57,7 +77,8 @@ src/
     ├── run-test.js              # Run specific feature files
     ├── list-envs.ts             # List available environments
     ├── show-config.ts           # Display current configuration
-    └── test-dbQuery.ts          # Test database connectivity
+    ├── test-dbQuery.ts          # Test database connectivity
+    └── test-mongo.ts            # Test MongoDB connectivity
 
 reports/              # Test artifacts (gitignored)
 ├── {env}/            # Environment-specific reports (qa, dev, stage, etc.)
@@ -232,6 +253,109 @@ Key methods:
 - `query(sql, params?)` - Execute query (requires manual connect/disconnect)
 - `isConnected()` - Check if connection is active
 
+### MongoDB Access (mongoHelper.ts)
+MongoDB helper for validating UI data against MongoDB database. Equivalent to Java's MongoDBUtil class.
+
+```typescript
+import { MongoDBHelper, UKSanctionsMongoQueries, getMongoHelper, closeMongoHelper } from "../helpers/mongoHelper";
+
+// Method 1: Instance-based (recommended for multiple queries)
+const mongo = new MongoDBHelper({
+  host: "localhost",
+  port: "27023",
+  database: "screenDB",
+  username: "user",      // optional
+  password: "pass",      // optional
+  authEnabled: true,     // optional, auto-detected if username provided
+  tlsEnabled: false      // optional
+});
+
+await mongo.connect();
+
+// Find all documents in a collection
+const allDocs = await mongo.findAll("collectionName");
+
+// Find documents with filter
+const filtered = await mongo.findDocuments("collectionName", { status: "active" });
+
+// Find with specific fields only
+const partial = await mongo.findDocuments("collectionName", { status: "active" }, ["name", "email"]);
+
+// Get document count
+const count = await mongo.getCount("collectionName", { status: "active" });
+
+// Fetch single field value
+const value = await mongo.fetchSingleValue("collectionName", { _id: "123" }, "fieldName");
+
+// Fetch column values from all matching documents
+const values = await mongo.fetchColumn("collectionName", { status: "active" }, "fieldName");
+
+// Get raw MongoDB documents (for complex operations)
+const rawDoc = await mongo.findRawDocument("collectionName", { _id: "123" });
+const rawDocs = await mongo.findRawDocuments("collectionName", { status: "active" });
+
+await mongo.disconnect();
+
+// Method 2: Singleton helper (for quick access)
+const mongoHelper = await getMongoHelper();
+const docs = await mongoHelper.findAll("collectionName");
+await closeMongoHelper();
+
+// Method 3: UK Sanctions specific queries
+const mongo = new MongoDBHelper();
+await mongo.connect();
+const ukSanctions = new UKSanctionsMongoQueries(mongo);
+
+// Get Active records with ID Type count
+const activeCount = await ukSanctions.getActiveRecordsWithIdTypeCount();
+
+// Get records by status
+const errorCount = await ukSanctions.getRecordsByStatusCount(3000);
+
+// Get filtered records with multiple criteria
+const filteredCount = await ukSanctions.getFilteredRecords({
+  statusId: 2000,
+  hasIdType: true,
+  hasProgramSource: true,
+  entityType: "Individual"
+});
+
+// Validate UI count against MongoDB
+const validation = await ukSanctions.validateUICount(uiCount, 2000);
+// Returns: { passed: boolean, uiCount: number, dbCount: number, message: string }
+
+await mongo.disconnect();
+```
+
+Key classes:
+- `MongoDBHelper` - Main MongoDB connection and query helper
+- `UKSanctionsMongoQueries` - UK SANCTIONS specific query methods
+- `getMongoHelper()` / `closeMongoHelper()` - Singleton helper functions
+
+Key methods (MongoDBHelper):
+- `connect()` / `disconnect()` - Connection management
+- `isConnected()` - Check connection status
+- `findAll(collection)` - Get all documents as Map arrays
+- `findDocuments(collection, filter?, fields?)` - Query with optional filter and projection
+- `getCount(collection, filter?)` - Count documents
+- `fetchSingleValue(collection, filter, field)` - Get single field from first match
+- `fetchColumn(collection, filter, field)` - Get field values from all matches
+- `findRawDocument(collection, filter?)` - Get raw MongoDB document
+- `findRawDocuments(collection, filter?)` - Get raw MongoDB documents array
+
+Environment variables:
+- `MONGO_HOST` - MongoDB hostname (default: localhost)
+- `MONGO_PORT` - MongoDB port (default: 27023)
+- `MONGO_DATABASE` - Database name (default: screenDB)
+- `MONGO_USERNAME` - Username (optional)
+- `MONGO_PASSWORD` - Password (optional)
+- `MONGO_TLS_ENABLED` - Enable TLS (default: false)
+
+SSH Tunnel Support:
+- The helper automatically adds `directConnection=true` to the connection URI
+- This ensures reliable connections when using SSH tunnels (e.g., AWS Session Manager port forwarding)
+- No additional configuration needed - just point `MONGO_HOST` to `localhost` and `MONGO_PORT` to your tunnel port
+
 ### TestDataStore (testDataStore.ts)
 Persists data across scenarios using a JSON file. Thread-safe for parallel execution using file locking. Useful for sharing data between scenarios.
 
@@ -394,6 +518,128 @@ Key methods:
 - `getRowCount(sheet)` / `getColumnCount(sheet)` - Get dimensions
 
 Test data files location: `src/resources/testData/`
+
+### IBL Dedup Steps (iblDedup.steps.ts)
+Steps for testing the IBL (Internal Block List) deduplication workflow.
+
+```gherkin
+# Navigation steps
+When user clicks on Watchlist dropdown
+When user clicks on Internal list option
+When user navigates to Internal List
+
+# List search and selection
+When user searches for list "Facctum IBL"
+When user clicks on list "Facctum IBL"
+When user searches and opens list "Facctum IBL"
+When user searches and opens the default IBL list
+
+# Add record form
+When user clicks on Add Records button
+When user selects Single record option
+When user opens the single record form
+When user enters name "Test Entity" in the input box
+When user enters the default name in the input box
+
+# Duplicate verification
+When user clicks on VERIFY DUPLICATE button
+Then the Select Attributes page should be open
+When user clicks SUBMIT on the Select Attributes modal
+When user clicks CANCEL on the Select Attributes modal
+Then the Verify Duplicates page should be open
+Then there should be at least 1 matching record(s)
+
+# Record details
+When user clicks on each record ID and verifies the details
+When user clicks on record at index 0
+When user closes the record drawer
+Then the drawer should show record ID "REC123"
+Then the drawer full name should contain "Test Entity"
+
+# Full flow steps (combines multiple steps)
+When user performs the complete IBL dedup verification flow
+When user performs IBL dedup verification for list "Custom List" with name "Custom Name"
+```
+
+Key details:
+- Uses `IBLDedupPage` page object for all interactions
+- Default list name: "Facctum IBL" (configurable via step parameter)
+- Default entity name for testing is defined in `IBLDedupPage.NAME` constant
+- Full flow step combines: navigate → search list → add record → enter name → verify duplicates → view records
+- Record links open in new tabs - use `clickRecordId(index)` or `clickRecordIdAndGetNewTab(index)` (both return the new `Page` object)
+- Store the returned page in scenario context for further interactions on the new tab
+
+### UK Sanctions Advanced Filter Steps (ukSanctionsAdvFilter.steps.ts)
+Steps for testing the UK SANCTIONS regulatory list advanced filtering and download functionality.
+
+```gherkin
+# Background/Setup steps
+Given Facctlist Login 2
+When Navigate to Regulatory List 2
+When Select List name 2
+
+# Full flow step (applies filters across all tabs)
+When Apply Filter in all tabs 2
+Then Check the status 2
+
+# Filter panel operations
+When user opens the filter panel
+When user closes the filter panel
+When user applies the filter
+When user clears all filters
+When user clears applied filters
+
+# Individual filter selections (Select All)
+When user selects Id Type filter with Select All
+When user selects Program Source filter with Select All
+When user selects Regime Name filter with Select All
+When user selects Type filter with Select All
+
+# Date filter
+When user sets Designated Date filter to "01/01/2020"
+
+# Tab navigation
+When user clicks on Active tab
+When user clicks on Error tab
+When user clicks on Delete tab
+
+# Delta view
+When user toggles Delta view
+When user clicks on New tab
+
+# Download operations
+When user downloads as Tab Separated
+When user downloads as Excel
+
+# Assertions
+Then the download button should be visible
+Then the filter panel should be visible
+Then the filter panel should be closed
+Then the UI filtered count should be 10
+Then the Active tab should be selected
+Then the Error tab should be selected
+Then the Delete tab should be selected
+Then the Delta view should be enabled
+Then the New tab should be selected
+Then the toaster message should be displayed
+```
+
+Key details:
+- Uses `UKSANCTIONSadvfilterPage` page object for all interactions
+- Flow: Watchlist → Regulatory List → UK SANCTIONS → Apply filters → Download
+- Tabs: Records, Downloads, Active, Error, Deleted
+- Delta view tabs: New, Amended, Deleted, Stable, Error
+- Filter categories: Designated Date, Id Type, Program Source, Regime Name, Type
+- Download formats: Excel (.xlsx), Tab separated (.tsv)
+- Full flow step (`Apply Filter in all tabs 2`) orchestrates filtering across all tabs with predefined test data
+- Individual filter steps allow granular testing of each filter category
+- Feature file: `src/features/UKSANCTIONSadvfilter.feature` with scenarios for:
+  - Full filter application across all tabs
+  - Filter panel open/close functionality
+  - Individual filter category testing (Id Type, Designated Date, Program Source, Regime Name, Type)
+  - Tab navigation (Active, Error, Delete)
+  - Delta view toggle and navigation
+  - Download functionality (Excel and Tab Separated formats)
 
 ### Help Guide Steps (helpGuide.steps.ts)
 Steps for testing the Help Guide panel and documentation pages.

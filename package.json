@@ -39,6 +39,7 @@
   "type": "commonjs",
   "devDependencies": {
     "@playwright/test": "^1.58.2",
+    "@types/mongodb": "^4.0.6",
     "@types/node": "^25.5.0",
     "@types/pg": "^8.15.4",
     "allure-commandline": "^2.38.0",
@@ -49,6 +50,7 @@
   "dependencies": {
     "@aws-sdk/rds-signer": "^3.840.0",
     "@cucumber/cucumber": "^12.7.0",
+    "mongodb": "^7.2.0",
     "pg": "^8.16.0",
     "playwright": "^1.58.2",
     "ts-node": "^10.9.2",
