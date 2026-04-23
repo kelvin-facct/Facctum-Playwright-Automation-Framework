@@ -1,4 +1,4 @@
-import { Locator, Page } from "playwright";
+import { Locator, Page, expect } from "@playwright/test";
 import { PlaywrightActions } from "../helpers/playwrightActions";
 import { logger } from "../utils/logger";
 
@@ -11,14 +11,28 @@ export class FacctumDashboardPage {
   private transactionScreeningCard: Locator;
   private transactionMonitoringCard: Locator;
 
+  // Help Guide panel locators
+  private helpIconHeader: Locator;
+  private helpGuidePanel: Locator;
+  private helpGuidePanelTitle: Locator;
+  private helpGuideIframe: Locator;
+  private helpGuideCloseButton: Locator;
+
   constructor(private page: Page) {
     this.actions = new PlaywrightActions(page);
     
-    // Initialize card locators using nth selector for reliability
-    this.listManagementCard = page.locator('.facct-rawhtml').nth(0);
-    this.customerScreeningCard = page.locator('.facct-rawhtml').nth(1);
-    this.transactionScreeningCard = page.locator('.facct-rawhtml').nth(2);
-    this.transactionMonitoringCard = page.locator('.facct-rawhtml').nth(3);
+    // Initialize card locators using text-based selectors for reliability
+    this.listManagementCard = page.locator('.product-card:has-text("List")').first();
+    this.customerScreeningCard = page.locator('.product-card:has-text("Customer")').first();
+    this.transactionScreeningCard = page.locator('.product-card:has-text("Transaction Screening")').first();
+    this.transactionMonitoringCard = page.locator('.product-card:has-text("Transaction Monitoring")').first();
+
+    // Initialize Help Guide panel locators
+    this.helpIconHeader = page.locator('.facct-guidedocs svg, [data-testid="HelpOutlineIcon"]').first();
+    this.helpGuidePanel = page.locator('.MuiDrawer-paperAnchorRight');
+    this.helpGuidePanelTitle = page.locator('.facct-drawer-header-wrapper .header-content');
+    this.helpGuideIframe = page.locator('iframe[title="Facctum Docx"]');
+    this.helpGuideCloseButton = page.locator('.facct-drawer-footer-wrapper button:has-text("CLOSE")');
   }
 
   /**
@@ -153,5 +167,116 @@ export class FacctumDashboardPage {
     } else {
       logger.info("Collapse button not found or panel already collapsed");
     }
+  }
+
+  // ==================== Help Guide Panel Methods ====================
+
+  /**
+   * Opens the Help Guide panel by clicking the help icon in the header.
+   */
+  async openHelpGuidePanel(): Promise<void> {
+    await this.helpIconHeader.click();
+    await this.helpGuidePanel.waitFor({ state: "visible", timeout: 10000 });
+    logger.info("Help Guide panel opened");
+  }
+
+  /**
+   * Closes the Help Guide panel by clicking the CLOSE button.
+   */
+  async closeHelpGuidePanel(): Promise<void> {
+    await this.helpGuideCloseButton.click();
+    await this.helpGuidePanel.waitFor({ state: "hidden", timeout: 5000 });
+    logger.info("Help Guide panel closed");
+  }
+
+  /**
+   * Verifies the Help Guide panel is displayed.
+   */
+  async verifyHelpGuidePanelDisplayed(): Promise<void> {
+    await expect(this.helpGuidePanel).toBeVisible({ timeout: 10000 });
+    logger.info("Help Guide panel is displayed");
+  }
+
+  /**
+   * Verifies the Help Guide panel is closed/hidden.
+   */
+  async verifyHelpGuidePanelClosed(): Promise<void> {
+    await expect(this.helpGuidePanel).not.toBeVisible({ timeout: 5000 });
+    logger.info("Help Guide panel is closed");
+  }
+
+  /**
+   * Gets the Help Guide panel title text.
+   */
+  async getHelpGuidePanelTitle(): Promise<string> {
+    const title = await this.helpGuidePanelTitle.textContent();
+    return title || "";
+  }
+
+  /**
+   * Verifies the Help Guide panel title matches expected text.
+   * @param expectedTitle - Expected title text
+   */
+  async verifyHelpGuidePanelTitle(expectedTitle: string): Promise<void> {
+    await expect(this.helpGuidePanelTitle).toHaveText(expectedTitle, { timeout: 5000 });
+    logger.info(`Help Guide panel title verified: "${expectedTitle}"`);
+  }
+
+  /**
+   * Gets the Help Guide iframe source URL.
+   */
+  async getHelpGuideIframeSrc(): Promise<string | null> {
+    return await this.helpGuideIframe.getAttribute("src");
+  }
+
+  /**
+   * Fetches and returns the text content from the Help Guide iframe.
+   */
+  async getHelpGuideContent(): Promise<string> {
+    const iframeSrc = await this.getHelpGuideIframeSrc();
+    
+    if (!iframeSrc) {
+      throw new Error("Help Guide iframe src not found");
+    }
+    
+    // Fetch the iframe content
+    const iframeContent = await this.page.evaluate(async (src) => {
+      const response = await fetch(src);
+      return response.text();
+    }, iframeSrc);
+    
+    // Extract text content from HTML
+    const textContent = iframeContent
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    
+    return textContent;
+  }
+
+  /**
+   * Verifies the Help Guide content contains the expected text.
+   * @param expectedTexts - Array of text strings to verify
+   * @returns Array of missing texts (empty if all found)
+   */
+  async verifyHelpGuideContentContains(expectedTexts: string[]): Promise<string[]> {
+    const content = await this.getHelpGuideContent();
+    const missingTexts: string[] = [];
+    
+    for (const text of expectedTexts) {
+      if (!content.includes(text)) {
+        missingTexts.push(text);
+      }
+    }
+    
+    if (missingTexts.length === 0) {
+      logger.info(`All ${expectedTexts.length} expected texts verified in Help Guide content`);
+    } else {
+      logger.warn(`Missing texts in Help Guide: ${missingTexts.join(", ")}`);
+    }
+    
+    return missingTexts;
   }
 }
