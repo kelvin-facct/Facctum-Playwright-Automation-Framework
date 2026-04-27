@@ -5,6 +5,8 @@ import { PreScreeningRulePage } from "./PreScreeningRulePage";
 import { ListManagementPage } from "./ListManagementPage";
 import { TasksPage } from "./TasksPage";
 import { IBLDedupPage } from "./IBLDedupPage";
+import { CommercialListPage } from "./CommercialListPage";
+import { ProfileViewPage } from "./ProfileViewPage";
 
 /**
  * PageManager - Factory class for lazy-loading and caching page objects.
@@ -19,6 +21,8 @@ export class PageManager {
   private listManagementPage?: ListManagementPage;
   private tasksPage?: TasksPage;
   private iblDedupPage?: IBLDedupPage;
+  private commercialListPage?: CommercialListPage;
+  private profileViewPage?: ProfileViewPage;
 
   constructor(page: Page) {
     this.page = page;
@@ -64,5 +68,19 @@ export class PageManager {
       this.iblDedupPage = new IBLDedupPage(this.page);
     }
     return this.iblDedupPage;
+  }
+
+  getCommercialListPage(): CommercialListPage {
+    if (!this.commercialListPage) {
+      this.commercialListPage = new CommercialListPage(this.page);
+    }
+    return this.commercialListPage;
+  }
+
+  getProfileViewPage(): ProfileViewPage {
+    if (!this.profileViewPage) {
+      this.profileViewPage = new ProfileViewPage(this.page);
+    }
+    return this.profileViewPage;
   }
 }
