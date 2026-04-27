@@ -7,6 +7,7 @@ import { TasksPage } from "./TasksPage";
 import { IBLDedupPage } from "./IBLDedupPage";
 import { CommercialListPage } from "./CommercialListPage";
 import { ProfileViewPage } from "./ProfileViewPage";
+import { UKSANCTIONSadvfilterPage } from "./UKSANCTIONSadvfilterPage";
 
 /**
  * PageManager - Factory class for lazy-loading and caching page objects.
@@ -23,6 +24,7 @@ export class PageManager {
   private iblDedupPage?: IBLDedupPage;
   private commercialListPage?: CommercialListPage;
   private profileViewPage?: ProfileViewPage;
+  private ukSanctionsAdvFilterPage?: UKSANCTIONSadvfilterPage;
 
   constructor(page: Page) {
     this.page = page;
@@ -82,5 +84,12 @@ export class PageManager {
       this.profileViewPage = new ProfileViewPage(this.page);
     }
     return this.profileViewPage;
+  }
+
+  getUKSanctionsAdvFilterPage(): UKSANCTIONSadvfilterPage {
+    if (!this.ukSanctionsAdvFilterPage) {
+      this.ukSanctionsAdvFilterPage = new UKSANCTIONSadvfilterPage(this.page);
+    }
+    return this.ukSanctionsAdvFilterPage;
   }
 }

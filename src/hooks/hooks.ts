@@ -571,7 +571,6 @@ After(async function (this: CustomWorld, scenario) {
       } else {
         try {
           await this.context.tracing.stop();
-          await this.attach("Tracing stopped", "text/plain");
         } catch (e) {
           // Ignore tracing errors for passed tests
         }
@@ -585,7 +584,6 @@ After(async function (this: CustomWorld, scenario) {
     try {
       if (this.closeDb) {
         await this.closeDb();
-        await this.attach("Database connection closed", "text/plain");
       }
     } catch (e) {
       logger.error(`Failed to close database: ${e}`);
@@ -610,8 +608,6 @@ After(async function (this: CustomWorld, scenario) {
         // Browser already closed
       }
     }
-    
-    await this.attach("Resources cleaned up", "text/plain");
 
     // Handle video: rename for failed scenarios, delete for passed
     if (videoPath) {
