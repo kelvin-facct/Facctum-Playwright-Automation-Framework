@@ -121,7 +121,7 @@ npx ts-node src/scripts/test-mongo.ts
 - `MONGO_USERNAME` - MongoDB username (optional, enables auth if set)
 - `MONGO_PASSWORD` - MongoDB password (optional)
 - `MONGO_TLS_ENABLED` - Enable TLS connection (true/false, default: false)
-- `MONGO_VALIDATION` - Enable MongoDB validation for UI count verification (true/false, default: true). Set to `false` to disable.
+- `MONGO_VALIDATION` - Enable MongoDB validation for UI count verification (true/false, default: true for regulatory list tests). Set to `false` to disable.
 
 ## Configuration Files
 - `src/config/cucumber.js` - Cucumber configuration
@@ -207,7 +207,7 @@ MONGO_DATABASE=screenDB
 MONGO_USERNAME=mongouser
 MONGO_PASSWORD=mongopassword
 # MONGO_TLS_ENABLED=true  # Uncomment for TLS connections
-# MONGO_VALIDATION=false  # MongoDB validation is enabled by default; set to false to disable
+# MONGO_VALIDATION=false  # MongoDB validation is enabled by default for regulatory list tests; set to false to disable
 ```
 
 #### Credential Resolution Priority

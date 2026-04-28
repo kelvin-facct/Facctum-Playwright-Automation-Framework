@@ -33,16 +33,77 @@ src/
 │   │                         #              clickCloseOnDuplicatesModal, clickModifyAttributes,
 │   │                         #              clickRecordId (alias), clickRecordIdAndGetNewTab (opens record in new tab, returns Page)
 │   │                         # Constants: LIST_NAME ("Facctum IBL"), NAME (test entity name)
-│   └── UKSANCTIONSadvfilterPage.ts  # UK Sanctions advanced filter page object
-│                             # Flow: Watchlist → Regulatory List → UK SANCTIONS → Filter/Download records
+│   │                         # Access via: pageManager.getIBLDedupPage()
+│   ├── IBLCreateSingleRecordPage.ts  # IBL Single Record Creation page object (migrated from Java)
+│   │                         # Flow: Watchlist → Internal List → Search list → Add Records → Single record →
+│   │                         #       Select record type → Fill mandatory fields → Submit for approval
+│   │                         # Record types: Individual, Entity, Bank, Vessel
+│   │                         # NOTE: Default list "Facctview IBL" only supports Individual type.
+│   │                         #       Entity/Bank/Vessel require a list configured for those types.
+│   │                         # Sections: Names, ID Numbers, Address, Gender, Dates, Additional Details
+│   │                         # Key methods: navigateToInternalList, searchAndOpenList, openSingleRecordForm,
+│   │                         #              selectRecordType, enterFirstName, enterLastName, enterIdValue,
+│   │                         #              selectIdType, enterAddressLine1, selectAddressCountry, selectGender,
+│   │                         #              enterDateOfBirth, clickSubmitForApproval, enterSubmitComment, clickFinalSubmit,
+│   │                         #              fillMandatoryFieldsForIndividual, fillMandatoryFieldsForEntity,
+│   │                         #              fillMandatoryFieldsForVessel, createAndSubmitRecord,
+│   │                         #              clickPendingTab, withdrawLastRecord (smart: finds first withdrawable record),
+│   │                         #              withdrawRecordById, clickKebabMenuForRow(index)
+│   │                         # Customer Type: selectCustomerType(customerType)
+│   │                         # Alias/Names: clickAddAlias, enterFullName (for Entity/Bank)
+│   │                         # World Check & Locations: enterWorldCheckId, enterLocation, clickAddLocation,
+│   │                         #              clickRemoveLocation, enterLocationByIndex, fillWorldCheckAndLocations
+│   │                         # Country dropdowns (multi-select): selectCountryOfIncorporation, selectOtherAffiliatedCountries
+│   │                         # Additional Details tab: clickAdditionalDetails, selectBusinessUnit, selectSubBusinessUnit,
+│   │                         #              enterBusinessUnitContact, selectExpiryDate, enterComments, enterReason,
+│   │                         #              enterFurtherComments, enterReferenceInformation, fillAdditionalDetailsTab
+│   │                         # ID Number section: selectRelatedIdAndEnterValue, fillIdNumberSection
+│   │                         # Footer buttons: clickCancel, clickVerifyDuplicate, clickSaveAsDraft, clickSubmitForApproval
+│   │                         # Constants: DEFAULT_LIST_NAME ("Facctview IBL"), TEST_DATA_PATH, SHEET_NAME
+│   │                         # Static: loadTestDataFromExcel() - loads test data from Excel file
+│   │                         # Access via: pageManager.getIBLCreateSingleRecordPage()
+│   ├── CommercialListPage.ts  # Commercial List page object for WC Main Premium
+│   │                         # Flow: Dashboard → List Management → Watchlist → Commercial list → WC Main Premium
+│   │                         # Key methods: navigateToCommercialList, openWCMainPremium, findCleanRecord,
+│   │                         #              openRecordById, searchAndOpenRecord, closeProfileView, getCurrentUrl
+│   │                         # findCleanRecord: Iterates through records to find one without pending approval
+│   │                         #                  (checks for suppress button visibility in profile view)
+│   │                         # Pagination: Handles multi-page navigation with tabindex check
+│   │                         # Access via: pageManager.getCommercialListPage()
+│   ├── ProfileViewPage.ts    # Record Profile View page object for Suppress/Enrich operations
+│   │                         # Operations: Suppress/Enrich Record (SER), Suppress Attribute (SA),
+│   │                         #             Enrich Attribute (EA), Edit Profile View (EPV)
+│   │                         # Key methods: clickSuppressEnrich, fillSuppressEnrichForm, clickSubmit,
+│   │                         #              suppressAttribute, fillSuppressAttributeForm,
+│   │                         #              clickEnrichOnSection, fillEnrichAliasForm, fillEnrichIdForm,
+│   │                         #              fillEnrichDobForm, clickEdit, verifyAuditTrail,
+│   │                         #              hasVersionConflictError, hasActionSucceeded, closeProfileView
+│   │                         # Form fields: tags (multi-select), reason, reviewPeriod, comment, attachment
+│   │                         # Validation: isProfileViewOpen, hasPendingApprovalWarning, isSubmitEnabled
+│   │                         # Access via: pageManager.getProfileViewPage()
+│   ├── UKSANCTIONSadvfilterPage.ts  # UK Sanctions advanced filter page object
+│   │                         # Flow: Watchlist → Regulatory List → UK SANCTIONS → Filter/Download records
+│   │                         # Tabs: Records, Downloads, Active, Error, Deleted
+│   │                         # Delta view tabs: New, Amended, Deleted, Stable, Error
+│   │                         # Filter categories: Designated Date, Id Type, Program Source, Regime Name, Type
+│   │                         # Download formats: Excel (.xlsx), Tab separated (.tsv)
+│   │                         # Key methods: applyUKSanctionsFilter (main orchestration across all tabs),
+│   │                         #              applyFiltersForTab (apply individual filters for a specific tab),
+│   │                         #              checkDownloadStatus (verify download completion and download file)
+│   │                         # Key locators: filterButton, filterPanel, applyButton, downloadButton
+│   │                         # Access via: pageManager.getUKSanctionsAdvFilterPage()
+│   └── OFACadvfilterPage.ts  # OFAC advanced filter page object
+│                             # Flow: Watchlist → Regulatory List → OFAC → Filter/Download records
 │                             # Tabs: Records, Downloads, Active, Error, Deleted
 │                             # Delta view tabs: New, Amended, Deleted, Stable, Error
-│                             # Filter categories: Designated Date, Id Type, Program Source, Regime Name, Type
+│                             # Filter categories: Address country, Citizenship country, Nationality country,
+│                             #                    Program name, Type, Last Updated Date (date range)
 │                             # Download formats: Excel (.xlsx), Tab separated (.tsv)
-│                             # Key methods: applyUKSanctionsFilter (main orchestration across all tabs),
-│                             #              applyFiltersForTab (apply individual filters for a specific tab),
-│                             #              checkDownloadStatus (verify download completion and download file)
+│                             # Key methods: applyOFACFilter (main orchestration across all tabs),
+│                             #              applyFiltersForTab, applyAllFiltersCombined, checkDownloadStatus
 │                             # Key locators: filterButton, filterPanel, applyButton, downloadButton
+│                             # Test data: address=Cuba, citizenship=Egypt, nationality=Egypt, program=CAR, type=Individual
+│                             # Access via: pageManager.getOFACAdvFilterPage()
 │
 ├── helpers/          # Reusable utilities
 │   ├── authHelper.ts         # Reusable authentication functions
@@ -257,7 +318,7 @@ Key methods:
 MongoDB helper for validating UI data against MongoDB database. Equivalent to Java's MongoDBUtil class.
 
 ```typescript
-import { MongoDBHelper, UKSanctionsMongoQueries, getMongoHelper, closeMongoHelper } from "../helpers/mongoHelper";
+import { MongoDBHelper, UKSanctionsMongoQueries, OFACMongoQueries, getMongoHelper, closeMongoHelper } from "../helpers/mongoHelper";
 
 // Method 1: Instance-based (recommended for multiple queries)
 const mongo = new MongoDBHelper({
@@ -325,11 +386,44 @@ const validation = await ukSanctions.validateUICount(uiCount, 2000);
 // Returns: { passed: boolean, uiCount: number, dbCount: number, message: string }
 
 await mongo.disconnect();
+
+// Method 4: OFAC specific queries
+const mongo = new MongoDBHelper();
+await mongo.connect();
+const ofac = new OFACMongoQueries(mongo);
+
+// Get Active records with Address Country count
+const activeCount = await ofac.getActiveRecordsWithAddressCount("OFAC Enhanced");
+
+// Get records by status
+const errorCount = await ofac.getRecordsByStatusCount(3000, "OFAC Enhanced");
+
+// Get filtered records with multiple criteria
+const filteredCount = await ofac.getFilteredRecords({
+  listName: "OFAC Enhanced",
+  statusId: 2000,
+  hasAddressCountry: true,
+  hasCitizenshipCountry: true,
+  hasNationalityCountry: true,
+  hasProgramName: true,
+  entityType: "Individual"
+});
+
+// Validate UI count against MongoDB for OFAC
+const validation = await ofac.validateUICount(uiCount, "OFAC Enhanced", 2000);
+// Returns: { passed: boolean, uiCount: number, dbCount: number, message: string }
+
+// Validate UI count with specific filter type
+const filterValidation = await ofac.validateUICountWithFilter(uiCount, "address", "OFAC Enhanced");
+// filterType options: "address" | "citizenship" | "nationality" | "program" | "type"
+
+await mongo.disconnect();
 ```
 
 Key classes:
 - `MongoDBHelper` - Main MongoDB connection and query helper
 - `UKSanctionsMongoQueries` - UK SANCTIONS specific query methods
+- `OFACMongoQueries` - OFAC specific query methods
 - `getMongoHelper()` / `closeMongoHelper()` - Singleton helper functions
 
 Key methods (MongoDBHelper):
@@ -569,6 +663,98 @@ Key details:
 - Record links open in new tabs - use `clickRecordId(index)` or `clickRecordIdAndGetNewTab(index)` (both return the new `Page` object)
 - Store the returned page in scenario context for further interactions on the new tab
 
+### IBL Create Single Record Steps (iblCreateSingleRecord.steps.ts)
+Steps for testing the IBL (Internal Block List) single record creation workflow.
+
+```gherkin
+# Navigation steps
+When user clicks on Watchlist dropdown
+When user clicks on Internal list option
+When user navigates to Internal List
+
+# List search and selection
+When user searches for list "Facctview IBL"
+When user clicks on list "Facctview IBL"
+When user searches and opens list "Facctview IBL"
+When user searches and opens the default IBL list
+
+# Add record form
+When user clicks on Add Records button
+When user selects Single record option
+When user opens the single record form
+When User selects record type "Individual"
+
+# Name entry
+When User enters first name "John"
+When User enters last name "Doe"
+When User enters full name "Test Entity Ltd"
+When User clicks Add Alias button
+When User enters alias first name "Johnny" at index 0
+When User enters alias last name "D" at index 0
+
+# ID Number section
+When User enters account number "ACC123456"
+When User enters customer ID "CUST789"
+When User enters government ID "GOV456"
+When User selects Related ID and enters value "REL123"
+When User clicks on ID Type dropdown for row 4
+When User selects Related ID option
+When User enters ID value "VALUE123" in row 4
+When User fills all ID numbers with Account "ACC1" Customer "CUST1" Government "GOV1" Related "REL1"
+
+# Address section
+When User enters address line 1 "123 Main Street"
+When User selects address country "United States"
+
+# Gender and dates
+When User selects gender "Male"
+When User enters date of birth "01/01/1990"
+
+# Customer type and additional fields
+When User selects customer type "High Risk"
+When User enters World Check ID "WC123"
+When User enters location "New York"
+When User clicks Add Location button
+
+# Additional Details tab
+When User clicks on Additional Details tab
+When User selects business unit "Compliance"
+When User selects sub business unit "AML"
+When User enters business unit contact "contact@example.com"
+When User selects expiry date "31/12/2025"
+When User enters comments "Test comment"
+When User enters reason "Test reason"
+When User enters further comments "Additional info"
+When User enters reference information "REF123"
+
+# Submit workflow
+When User clicks Submit for Approval button
+When User enters submit comment "Submitting for review"
+When User clicks Final Submit button
+
+# Pending/Withdraw workflow
+When User clicks on Pending tab
+When User withdraws the last record
+When User withdraws record by ID "REC123"
+
+# Full flow steps
+When User creates and submits Individual record with first name "John" last name "Doe"
+When User fills mandatory fields for Individual record
+When User fills mandatory fields for Entity record
+When User fills mandatory fields for Vessel record
+```
+
+Key details:
+- Uses `IBLCreateSingleRecordPage` page object for all interactions
+- Default list name: "Facctview IBL" (configurable via step parameter)
+- Supports record types: Individual, Entity, Bank, Vessel
+- NOTE: Default list "Facctview IBL" only supports Individual type; other types require a list configured for those record types
+- ID Number section supports: Account Number, Customer ID, Government ID, Related ID
+- Related ID requires selecting from dropdown before entering value
+- Row-based ID entry allows filling specific rows (1-based index in steps, converted to 0-based internally)
+- Full flow steps combine multiple steps for common workflows
+- Withdraw workflow allows removing pending records by ID or selecting the last withdrawable record
+
 ### UK Sanctions Advanced Filter Steps (ukSanctionsAdvFilter.steps.ts)
 Steps for testing the UK SANCTIONS regulatory list advanced filtering and download functionality.
 
@@ -640,6 +826,108 @@ Key details:
   - Tab navigation (Active, Error, Delete)
   - Delta view toggle and navigation
   - Download functionality (Excel and Tab Separated formats)
+
+### OFAC Advanced Filter Steps (ofacAdvFilter.steps.ts)
+Steps for testing the OFAC regulatory list advanced filtering and download functionality.
+
+```gherkin
+# Background/Setup steps (shared across scenarios)
+Given Facctlist Login 1
+When Navigate to Regulatory List 1
+When Select List name 1
+
+# Individual tab filter steps (granular testing)
+When Apply Filter in Active tab
+When Apply Filter in Error tab
+When Apply Filter in Delete tab
+When Apply Filter in New tab
+When Apply Filter in Amend tab
+When Apply Filter in Delta Delete tab
+When Apply Filter in Stable tab
+When Apply Filter in Delta Error tab
+Then the filter operations should complete successfully
+
+# Delta view toggle
+When user toggles OFAC Delta view
+Then the Delta view should be enabled
+
+# Downloads tab
+When user goes to OFAC Downloads tab
+Then Check the status 1
+
+# Legacy full flow step (applies filters across all tabs - may timeout)
+When Apply Filter in all tabs 1
+Then Check the status 1
+
+# Filter panel operations
+When user opens the OFAC filter panel
+When user closes the OFAC filter panel
+When user applies the OFAC filter
+
+# Individual filter selections (Select All)
+When user selects Address Country filter with Select All
+When user selects Citizenship Country filter with Select All
+When user selects Nationality Country filter with Select All
+When user selects Program Name filter with Select All
+When user selects OFAC Type filter with Select All
+
+# Date range filter
+When user sets Last Updated Date filter from "30/08/2024" to "22/12/2025"
+
+# Search and select specific values
+When user searches and selects Address Country "Cuba"
+When user searches and selects Citizenship Country "Egypt"
+When user searches and selects Nationality Country "Egypt"
+When user searches and selects Program Name "CAR"
+When user searches and selects OFAC Type "Individual"
+
+# Tab navigation
+When user clicks on OFAC Active tab
+When user clicks on OFAC Error tab
+When user clicks on OFAC Delete tab
+
+# Delta view
+When user toggles OFAC Delta view
+When user clicks on OFAC New tab
+When user clicks on OFAC Amend tab
+When user clicks on OFAC Delta Delete tab
+When user clicks on OFAC Stable tab
+When user clicks on OFAC Delta Error tab
+
+# Download operations
+When user downloads OFAC as Tab Separated
+When user downloads OFAC as Excel
+
+# Assertions
+Then the OFAC download button should be visible
+Then the OFAC filter panel should be visible
+Then the OFAC filter panel should be closed
+Then the OFAC toaster message should be displayed
+```
+
+Key details:
+- Uses `OFACadvfilterPage` page object for all interactions
+- Flow: Watchlist → Regulatory List → OFAC → Apply filters → Download
+- Tabs: Records, Downloads, Active, Error, Deleted
+- Delta view tabs: New, Amended, Deleted, Stable, Error
+- Filter categories: Address Country, Citizenship Country, Nationality Country, Program Name, Type, Last Updated Date (date range)
+- Download formats: Excel (.xlsx), Tab separated (.tsv)
+- Individual tab filter steps (`Apply Filter in Active tab`, `Apply Filter in Error tab`, etc.) for granular testing
+- Search and select steps allow filtering by specific values (e.g., "Cuba", "Egypt", "CAR", "Individual")
+- Feature file: `src/features/OFACadvfilter.feature` with scenarios (@ApplyingofOFACFilter):
+  - Active Tab filter application
+  - Error Tab filter application
+  - Delete Tab filter application
+  - Delta view toggle
+  - New Tab (Delta) filter application
+  - Amend Tab (Delta) filter application
+  - Delta Delete Tab filter application
+  - Stable Tab (Delta) filter application
+  - Delta Error Tab filter application
+  - Download status verification
+- Background steps handle login and navigation (shared across all scenarios)
+- Legacy step (`Apply Filter in all tabs 1`) still available for backward compatibility
+- Migrated from Java Selenium test (OFACadvfilterStep.java)
 
 ### Help Guide Steps (helpGuide.steps.ts)
 Steps for testing the Help Guide panel and documentation pages.

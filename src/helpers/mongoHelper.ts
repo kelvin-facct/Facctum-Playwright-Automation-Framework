@@ -344,6 +344,169 @@ export class UKSanctionsMongoQueries {
   }
 }
 
+/**
+ * OFAC specific MongoDB queries
+ * Equivalent to Java's MongoDB validation in OFACadvfilterPage
+ */
+export class OFACMongoQueries {
+  private mongoHelper: MongoDBHelper;
+  private collectionName: string;
+
+  constructor(mongoHelper: MongoDBHelper, collectionName: string = "facctumRegulatoryList") {
+    this.mongoHelper = mongoHelper;
+    this.collectionName = collectionName;
+  }
+
+  /**
+   * Get count of OFAC Active records with Address Country
+   * Equivalent to Java's MongoDB validation query:
+   * Filters.and(
+   *   Filters.eq("listName", "OFAC Enhanced"),
+   *   Filters.eq("statusId", 2000),
+   *   Filters.exists("addressDetailsList.countryName", true)
+   * )
+   */
+  async getActiveRecordsWithAddressCount(listName: string = "OFAC Enhanced"): Promise<number> {
+    const filter = {
+      listName: listName,
+      statusId: 2000,
+      "addressDetailsList.countryName": { $exists: true }
+    };
+
+    return await this.mongoHelper.getCount(this.collectionName, filter);
+  }
+
+  /**
+   * Get count of OFAC records by status
+   */
+  async getRecordsByStatusCount(statusId: number, listName: string = "OFAC Enhanced"): Promise<number> {
+    const filter = {
+      listName: listName,
+      statusId: statusId
+    };
+
+    return await this.mongoHelper.getCount(this.collectionName, filter);
+  }
+
+  /**
+   * Get OFAC records with specific filters
+   */
+  async getFilteredRecords(options: {
+    listName?: string;
+    statusId?: number;
+    hasAddressCountry?: boolean;
+    hasCitizenshipCountry?: boolean;
+    hasNationalityCountry?: boolean;
+    hasProgramName?: boolean;
+    entityType?: string;
+  }): Promise<number> {
+    const filter: Filter<Document> = {
+      listName: options.listName || "OFAC Enhanced"
+    };
+
+    if (options.statusId !== undefined) {
+      filter.statusId = options.statusId;
+    }
+    if (options.hasAddressCountry) {
+      filter["addressDetailsList.countryName"] = { $exists: true };
+    }
+    if (options.hasCitizenshipCountry) {
+      filter["citizenshipDetailsList.countryName"] = { $exists: true };
+    }
+    if (options.hasNationalityCountry) {
+      filter["nationalityDetailsList.countryName"] = { $exists: true };
+    }
+    if (options.hasProgramName) {
+      filter["sanctionProgramDetailsList.programName"] = { $exists: true };
+    }
+    if (options.entityType) {
+      filter.entityTypeName = options.entityType;
+    }
+
+    return await this.mongoHelper.getCount(this.collectionName, filter);
+  }
+
+  /**
+   * Validate UI count against MongoDB count for OFAC
+   */
+  async validateUICount(
+    uiCount: number,
+    listName: string = "OFAC Enhanced",
+    statusId: number = 2000
+  ): Promise<{
+    passed: boolean;
+    uiCount: number;
+    dbCount: number;
+    message: string;
+  }> {
+    const dbCount = await this.getActiveRecordsWithAddressCount(listName);
+    const passed = uiCount >= 0 && uiCount === dbCount;
+
+    const message = passed
+      ? `PASSED - UI count (${uiCount}) matches DB count (${dbCount})`
+      : `FAILED - UI count (${uiCount}) vs DB count (${dbCount})`;
+
+    console.log(`[OFACMongoQueries] ${message}`);
+
+    return { passed, uiCount, dbCount, message };
+  }
+
+  /**
+   * Validate UI count with specific filter criteria
+   */
+  async validateUICountWithFilter(
+    uiCount: number,
+    filterType: "address" | "citizenship" | "nationality" | "program" | "type",
+    listName: string = "OFAC Enhanced"
+  ): Promise<{
+    passed: boolean;
+    uiCount: number;
+    dbCount: number;
+    message: string;
+  }> {
+    const filterOptions: {
+      listName: string;
+      statusId: number;
+      hasAddressCountry?: boolean;
+      hasCitizenshipCountry?: boolean;
+      hasNationalityCountry?: boolean;
+      hasProgramName?: boolean;
+    } = {
+      listName: listName,
+      statusId: 2000
+    };
+
+    switch (filterType) {
+      case "address":
+        filterOptions.hasAddressCountry = true;
+        break;
+      case "citizenship":
+        filterOptions.hasCitizenshipCountry = true;
+        break;
+      case "nationality":
+        filterOptions.hasNationalityCountry = true;
+        break;
+      case "program":
+        filterOptions.hasProgramName = true;
+        break;
+      case "type":
+        // Type filter doesn't have a specific field check
+        break;
+    }
+
+    const dbCount = await this.getFilteredRecords(filterOptions);
+    const passed = uiCount >= 0 && uiCount === dbCount;
+
+    const message = passed
+      ? `PASSED - UI count (${uiCount}) matches DB count (${dbCount}) for ${filterType} filter`
+      : `FAILED - UI count (${uiCount}) vs DB count (${dbCount}) for ${filterType} filter`;
+
+    console.log(`[OFACMongoQueries] ${message}`);
+
+    return { passed, uiCount, dbCount, message };
+  }
+}
+
 // Export a singleton instance for convenience
 let mongoHelperInstance: MongoDBHelper | null = null;
 

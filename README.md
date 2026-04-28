@@ -434,7 +434,7 @@ MONGO_DATABASE=screenDB
 MONGO_USERNAME=mongouser
 MONGO_PASSWORD=mongopassword
 MONGO_TLS_ENABLED=true
-# MONGO_VALIDATION=false  # Set to false to disable MongoDB validation
+# MONGO_VALIDATION=true  # Set to true to enable MongoDB validation (disabled by default)
 ```
 
 ### SSH Tunnel Setup

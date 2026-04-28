@@ -1,4 +1,4 @@
-@UKSANCTIONSADVANCEFILTER @RegulatoryList
+@UKSANCTIONSADVANCEFILTER @RegulatoryList @org:facctum
 Feature: Regulatory UK SANCTIONS Advance Filter
   As a user
   I want to apply advanced filters on UK SANCTIONS regulatory list
