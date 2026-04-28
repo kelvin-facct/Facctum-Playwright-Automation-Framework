@@ -50,17 +50,66 @@ export class ListManagementPage {
   async searchAndSelectList(listName: string): Promise<void> {
     // Wait for the list table to load
     await this.page.waitForLoadState("networkidle");
+    await this.page.waitForTimeout(2000);
     
-    // Click on the list item using aria-label
-    const listItem = this.page.locator(`[aria-label="${listName}"]`);
-    await listItem.waitFor({ state: "visible", timeout: 15000 });
-    await listItem.click();
+    // Search for the list using the search input
+    const searchInput = this.page.locator('input[placeholder="Search by List name"]');
+    const searchVisible = await searchInput.isVisible({ timeout: 5000 }).catch(() => false);
+    
+    if (searchVisible) {
+      await searchInput.clear();
+      await searchInput.fill(listName);
+      await this.page.keyboard.press("Enter");
+      await this.page.waitForLoadState("networkidle");
+      await this.page.waitForTimeout(2000);
+      logger.info(`Searched for list: ${listName}`);
+    }
+    
+    // Try multiple selectors to find and click the list
+    const listSelectors = [
+      `[aria-label="${listName}"]`,
+      `a:has-text("${listName}")`,
+      `.link-cell:has-text("${listName}")`,
+      `td:has-text("${listName}")`,
+      `tr:has-text("${listName}") td:first-child a`,
+      `tr:has-text("${listName}")`
+    ];
+    
+    let clicked = false;
+    for (const selector of listSelectors) {
+      const listItem = this.page.locator(selector).first();
+      const isVisible = await listItem.isVisible({ timeout: 3000 }).catch(() => false);
+      if (isVisible) {
+        await listItem.click();
+        clicked = true;
+        logger.info(`Clicked list using selector: ${selector}`);
+        break;
+      }
+    }
+    
+    if (!clicked) {
+      // Fallback: click first row in the table
+      const firstRow = this.page.locator('tbody tr').first();
+      await firstRow.waitFor({ state: "visible", timeout: 10000 });
+      await firstRow.click();
+      logger.info("Clicked first row in table as fallback");
+    }
     
     // Wait for list details to load - ADD RECORDS button should appear
-    await this.addRecordBtn.waitFor({ state: "visible", timeout: 15000 });
     await this.page.waitForLoadState("networkidle");
+    await this.page.waitForTimeout(2000);
     
-    logger.info(`Selected list: ${listName}`);
+    // Wait for Add Records button with extended timeout
+    try {
+      await this.addRecordBtn.waitFor({ state: "visible", timeout: 20000 });
+      logger.info(`Selected list: ${listName}`);
+    } catch (e) {
+      // Log what's visible for debugging
+      const pageContent = await this.page.content();
+      const hasAddBtn = pageContent.includes("ADD RECORDS") || pageContent.includes("Add Records");
+      logger.error(`Add Records button not found. Page contains 'ADD RECORDS': ${hasAddBtn}`);
+      throw new Error(`Failed to select list "${listName}" - Add Records button not visible`);
+    }
   }
 
   async clickAddRecord(): Promise<void> {

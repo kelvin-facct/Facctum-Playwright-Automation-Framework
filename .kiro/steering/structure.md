@@ -17,7 +17,15 @@ src/
 │   ├── LoginPage.ts          # Login flow page object
 │   ├── FacctumDashboardPage.ts  # Dashboard/Home page object
 │   ├── PreScreeningRulePage.ts  # Pre-screening rules page object
-│   ├── ListManagementPage.ts    # List management page object
+│   ├── ListManagementPage.ts    # List management page object for Internal List operations
+│   │                         # Flow: Watchlist → Internal List → Search/Select list → Add Records
+│   │                         # Key methods: clickWatchlistDropdown, clickInternalList, searchAndSelectList,
+│   │                         #              clickAddRecord, selectBulkUploadOption, uploadFile,
+│   │                         #              enterBulkComments, clickSubmitForApproval, performBulkUpload
+│   │                         # searchAndSelectList: Searches by list name, uses multiple fallback selectors
+│   │                         #                      to find and click the list (aria-label, link-cell, td, tr)
+│   │                         # performBulkUpload: Convenience method combining bulk upload steps
+│   │                         # Access via: pageManager.getListManagementPage()
 │   ├── TasksPage.ts          # Tasks page for record approval workflows
 │   │                         # Methods: claimRecord, acceptRecord(comment?), rejectRecord(comment?), 
 │   │                         #          unclaimRecord, claimAndAcceptRecord
