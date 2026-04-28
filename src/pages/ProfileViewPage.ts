@@ -44,10 +44,13 @@ export class ProfileViewPage {
    * Clicks the Suppress/Enrich button on the record profile.
    */
   async clickSuppressEnrich(): Promise<void> {
-    await this.suppressEnrichBtn.waitFor({ state: "visible", timeout: 10000 });
-    await this.suppressEnrichBtn.click();
-    await this.page.waitForTimeout(2000);
-    logger.info("Clicked SUPPRESS button");
+    // Match E2E debug: click suppress, then wait for form to appear
+    const suppBtn = this.page.locator('#lseg-footer-suppress-btn');
+    await suppBtn.waitFor({ state: "visible", timeout: 10000 });
+    await suppBtn.click();
+    // Wait for the suppress form to actually open (tags dropdown visible)
+    await this.page.locator('#mui-component-select-tags').waitFor({ state: "visible", timeout: 15000 });
+    logger.info("Clicked SUPPRESS button, form opened");
   }
 
   /**
@@ -101,8 +104,22 @@ export class ProfileViewPage {
     const editSubmit = this.page.locator('#lseg-footer-submitForApproval-btn');
 
     if (await suppressSubmit.isVisible({ timeout: 3000 }).catch(() => false)) {
+      // Match E2E debug: scroll into view, wait for enabled, click, retry if needed
+      await suppressSubmit.scrollIntoViewIfNeeded();
+      await this.page.waitForFunction(() => {
+        const b = document.querySelector('#hold-enrich-modal-submit-btn') as HTMLButtonElement;
+        return b && !b.disabled;
+      }, { timeout: 10000 }).catch(e => logger.warn(`Submit wait: ${e}`));
       await suppressSubmit.click();
       logger.info("Clicked Submit for Approval (suppress form)");
+
+      // Verify form closed — retry with force click if still open
+      await this.page.waitForTimeout(2000);
+      const formStillOpen = await suppressSubmit.isVisible({ timeout: 3000 }).catch(() => false);
+      if (formStillOpen) {
+        logger.warn("Form still open after submit — retrying with force click");
+        await suppressSubmit.click({ force: true });
+      }
     } else if (await editSubmit.isVisible({ timeout: 3000 }).catch(() => false)) {
       await editSubmit.click();
       logger.info("Clicked Submit for Approval (edit mode)");
@@ -110,7 +127,7 @@ export class ProfileViewPage {
       throw new Error("No Submit for Approval button found");
     }
 
-    await this.page.waitForLoadState("networkidle");
+    await this.page.waitForLoadState("networkidle").catch(() => {});
     await this.page.waitForTimeout(2000);
   }
 
