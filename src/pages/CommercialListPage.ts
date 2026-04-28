@@ -86,80 +86,62 @@ export class CommercialListPage {
     let maxPages = 10;
 
     while (maxPages > 0) {
-      await this.page.waitForLoadState("networkidle");
-      await this.page.waitForTimeout(2000);
-
+      // Fresh locator each iteration (avoids stale references after pagination)
       const rows = this.page.locator('tbody tr.table-row, tbody.MuiTableBody-root tr');
-      const rowCount = await rows.count();
-      logger.info(`Scanning ${rowCount} records on current page`);
+      const rc = await rows.count();
+      logger.info(`Page: ${rc} rows`);
 
-      for (let i = 0; i < rowCount; i++) {
-        const row = rows.nth(i);
-        const firstCell = row.locator('td').first();
+      for (let i = 0; i < rc; i++) {
+        if (this.page.isClosed()) return null;
 
-        // Extract the Record ID from Cell 0 text.
-        // Cell 0 contains checkbox + Record ID number as text.
-        const cellText = await firstCell.textContent() || "";
-        const recordId = cellText.trim();
-        logger.info(`Row ${i}: Record ID = "${recordId}"`);
+        const rid = (await rows.nth(i).locator('td').first().textContent() || "").trim();
+        logger.info(`Checking ${rid}...`);
 
-        // Open profile via kebab menu (3-dot icon in last cell) → Overview
-        const kebabIcon = row.locator('.kebab-cell svg, td:last-child svg').first();
-        await kebabIcon.waitFor({ state: "visible", timeout: 5000 });
-        await kebabIcon.click();
-        await this.page.waitForTimeout(1000);
-
-        // Click "Overview" from the popover menu
-        const overviewOption = this.page.locator(
-          '[role="menuitem"]:has-text("Overview"), ' +
-          '.MuiMenuItem-root:has-text("Overview"), ' +
-          'li:has-text("Overview")'
-        ).first();
-        await overviewOption.waitFor({ state: "visible", timeout: 5000 });
-        await overviewOption.click();
+        // Open via kebab → Overview → wait for drawer (exact E2E debug pattern)
+        await rows.nth(i).locator('.kebab-cell svg, td:last-child svg').first().click();
+        await this.page.locator('[role="menuitem"]:has-text("Overview")').first().waitFor({ state: "visible", timeout: 5000 });
+        await this.page.locator('[role="menuitem"]:has-text("Overview")').first().click();
         await this.page.waitForLoadState("networkidle");
+        await this.page.locator('.facct-drawer-paper').first().waitFor({ state: "visible", timeout: 15000 });
         await this.page.waitForTimeout(2000);
 
-        // Check for ANY warning/status that indicates the record is not clean
-        const warningSelectors = [
-          'text=This record is already pending approval',
-          'text=This record already has a pending review task',
-          'text=pending review',
-          'text=pending approval',
-          'text=Attribute suppressed',
-          'text=Record suppressed',
-        ];
-
-        let hasWarning = false;
-        for (const sel of warningSelectors) {
-          const isVisible = await this.page.locator(sel).first().isVisible({ timeout: 2000 }).catch(() => false);
-          if (isVisible) {
-            const warningText = await this.page.locator(sel).first().textContent().catch(() => sel);
-            logger.info(`Record ${recordId}: has warning "${warningText?.trim().substring(0, 60)}", skipping`);
-            hasWarning = true;
-            break;
-          }
-        }
-
-        if (hasWarning) {
-          await this.closeProfileView();
+        // Verify the profile shows the correct Record ID (stale drawer guard)
+        const profileText = await this.page.locator('.facct-drawer-paper').first().textContent().catch(() => "") || "";
+        const ridMatch = profileText.match(/Record ID\s*(\d+)/);
+        const profileRid = ridMatch ? ridMatch[1] : "";
+        if (profileRid && profileRid !== rid) {
+          logger.warn(`Profile shows Record ID ${profileRid}, expected ${rid} — stale drawer, skipping`);
+          await this.page.locator('#lseg-footer-close-btn').click();
+          await this.page.locator('.facct-drawer-paper').first().waitFor({ state: "hidden", timeout: 10000 }).catch(() => {});
+          await this.page.waitForTimeout(500);
           continue;
         }
 
-        logger.info(`Found clean record: ${recordId}`);
-        return recordId;
+        if (await this.page.locator('#lseg-footer-suppress-btn').isVisible({ timeout: 5000 }).catch(() => false)) {
+          logger.info(`✅ Clean: ${rid}`);
+          return rid;
+        }
+
+        // Close drawer (exact E2E debug pattern)
+        await this.page.locator('#lseg-footer-close-btn').click();
+        await this.page.locator('.facct-drawer-paper').first().waitFor({ state: "hidden", timeout: 10000 }).catch(() => {});
+        await this.page.waitForTimeout(500);
       }
 
-      // Paginate to next page
-      const nextBtn = this.paginationNextBtn;
-      const isDisabled = (await nextBtn.getAttribute("tabindex")) === "-1";
-      if (isDisabled) {
-        logger.warn("No more pages to scan");
+      // Paginate — exact E2E debug pattern: .nth(1) with tabindex check + catch
+      const nb = this.page.locator('button[class*="pagination-next-btn"]').nth(1);
+      const nbCount = await this.page.locator('button[class*="pagination-next-btn"]').count();
+      const nbVisible = await nb.isVisible({ timeout: 3000 }).catch(() => false);
+      const nbTabIndex = await nb.getAttribute("tabindex").catch(() => "null");
+      logger.info(`Pagination: ${nbCount} buttons found, .nth(1) visible=${nbVisible} tabindex=${nbTabIndex}`);
+      if (nbTabIndex === "-1" || nbTabIndex === "null") {
+        logger.warn("No more pages (tabindex=-1 or null)");
         break;
       }
-      await nextBtn.click();
+      await nb.click();
       await this.page.waitForLoadState("networkidle");
-      await this.page.waitForTimeout(2000);
+      await this.page.locator('tbody tr').first().waitFor({ state: "visible", timeout: 15000 });
+      logger.info("Navigated to next page");
       maxPages--;
     }
 
@@ -171,24 +153,30 @@ export class CommercialListPage {
    * Closes the profile view shutter/panel.
    */
   async closeProfileView(): Promise<void> {
-    const closeBtn = this.page.locator(
-      '.facct-drawer-footer-wrapper button:has-text("CLOSE"), ' +
-      'button[aria-label="close"], ' +
-      '.profile-view-close, ' +
-      '[data-testid="CloseIcon"]'
-    ).first();
-
-    const isVisible = await closeBtn.isVisible({ timeout: 3000 }).catch(() => false);
-    if (isVisible) {
+    // Use the stable ID first (confirmed from debug output)
+    const closeBtn = this.page.locator('#lseg-footer-close-btn');
+    if (await closeBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
       await closeBtn.click();
-      await this.page.waitForTimeout(1000);
+      await this.page.waitForTimeout(1500);
+      // Wait for drawer to fully close
+      await this.page.locator('.facct-drawer-paper').first().waitFor({ state: "hidden", timeout: 5000 }).catch(() => {});
       logger.info("Closed profile view");
-    } else {
-      // Try pressing Escape as fallback
-      await this.page.keyboard.press("Escape");
-      await this.page.waitForTimeout(1000);
-      logger.info("Closed profile view via Escape");
+      return;
     }
+
+    // Fallback: try X icon
+    const closeIcon = this.page.locator('[data-testid="CloseIcon"]').first();
+    if (await closeIcon.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await closeIcon.click();
+      await this.page.waitForTimeout(1500);
+      logger.info("Closed profile view (X icon)");
+      return;
+    }
+
+    // Last resort: Escape
+    await this.page.keyboard.press("Escape");
+    await this.page.waitForTimeout(1500);
+    logger.info("Closed profile view via Escape");
   }
 
   /**

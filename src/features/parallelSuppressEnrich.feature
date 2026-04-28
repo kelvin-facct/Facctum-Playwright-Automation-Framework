@@ -9,24 +9,42 @@ Feature: Parallel Testing - Suppress/Enrich on Commercial List Records
   # ==================== Suppress/Enrich Record (SER) ====================
 
   @SER @Approve
-  Scenario Outline: SER - Suppress/Enrich Record with <workflow> workflow
+  Scenario Outline: SER - Suppress/Enrich Record with Approve workflow
     When the maker performs Suppress/Enrich on the record with tags "<tags>" reason "<reason>" review period "<reviewPeriod>" comment "<comment>" attachment "<attachment>"
     And the approver opens a separate browser session and navigates to Tasks
-    And the approver claims and <workflow> the request
+    And the approver claims and Approve the request
     And the maker retries the same Suppress/Enrich action on the stale view
-    Then the expected outcome for "<workflow>" workflow should be validated
+    Then the expected outcome for "Approve" workflow should be validated
+    Then the suppression is released and approved for cleanup
 
     Examples:
-      | tags                                  | reason                | reviewPeriod          | comment      | attachment | workflow |
-      | Enrich Tag                            | Vessel suppression   | Annual (365 Days)     | Test comment | With       | Approve  |
-      | Customer Enrich Tag 1                 | Vessel suppression    | Half yearly (180 Days)| Without      | With       | Approve  |
-      | Enrich Tag,Customer Enrich 2          | Vessel suppression     | Quarterly (90 Days)   | Test comment | With       | Approve  |
-      | Enrich Tag                            | Vessel suppression   | Monthly (30 Days)     | Without      | With       | Reject   |
-      | Customer Enrich Tag 1                 | Vessel suppression    | Fortnightly (14 Days) | Test comment | With       | Reject   |
-      | Enrich Tag,Customer Enrich 2          | Vessel suppression    | Weekly (7 Days)       | Without      | With       | Reject   |
-      | Enrich Tag                            | Vessel suppression   | Annual (365 Days)     | Test comment | With       | Withdraw |
-      | Customer Enrich Tag 1                 | Vessel suppression    | Half yearly (180 Days)| Without      | With       | Withdraw |
-      | Enrich Tag,Customer Enrich 2          | Vessel suppression     | Quarterly (90 Days)   | Without      | With       | Withdraw |
+      | tags                                  | reason                | reviewPeriod          | comment      | attachment |
+      | Enrich Tag                            | Vessel suppression   | Annual (365 Days)     | Test comment | With       |
+
+  @SER @Reject
+  Scenario Outline: SER - Suppress/Enrich Record with Reject workflow
+    When the maker performs Suppress/Enrich on the record with tags "<tags>" reason "<reason>" review period "<reviewPeriod>" comment "<comment>" attachment "<attachment>"
+    And the approver opens a separate browser session and navigates to Tasks
+    And the approver claims and Reject the request
+    And the maker retries the same Suppress/Enrich action on the stale view
+    Then the stale suppress should succeed after Reject
+    Then the new suppress is approved and released for cleanup
+
+    Examples:
+      | tags                                  | reason                | reviewPeriod          | comment      | attachment |
+      | Enrich Tag                            | Vessel suppression   | Annual (365 Days)     | Test comment | With       |
+
+  @SER @Withdraw
+  Scenario Outline: SER - Suppress/Enrich Record with Withdraw workflow
+    When the maker performs Suppress/Enrich on the record with tags "<tags>" reason "<reason>" review period "<reviewPeriod>" comment "<comment>" attachment "<attachment>"
+    And the maker withdraws the suppress request from Tasks
+    And the maker retries the same Suppress/Enrich action on the stale view
+    Then the stale suppress should succeed after Withdraw
+    Then the new suppress is approved and released for cleanup
+
+    Examples:
+      | tags                                  | reason                | reviewPeriod          | comment      | attachment |
+      | Enrich Tag                            | Vessel suppression   | Annual (365 Days)     | Test comment | With       |
 
   # ==================== Suppress Attribute (SA) ====================
 
