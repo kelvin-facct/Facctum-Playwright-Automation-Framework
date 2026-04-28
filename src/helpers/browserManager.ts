@@ -48,7 +48,7 @@ export class BrowserManager {
           headless: EnvConfig.HEADLESS,
           args: [
             '--disable-blink-features=AutomationControlled',
-            '--force-device-scale-factor=0.67',
+            '--force-device-scale-factor=1',
             '--high-dpi-support=1'
           ]
         });
