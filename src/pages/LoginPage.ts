@@ -31,13 +31,13 @@ export class LoginPage {
   constructor(private page: Page) {
     this.actions = new PlaywrightActions(page);
 
-    // Initialize locators
-    this.btnLogin = page.getByRole("button", { name: "LOG IN" });
-    this.txtOrgId = page.getByRole("textbox", { name: "Organisation ID" });
-    this.btnContinueOrg = page.getByRole("button", { name: "CONTINUE" });
-    this.txtEmail = page.getByRole("textbox", { name: "Email address" });
-    this.txtPassword = page.getByRole("textbox", { name: "Password" });
-    this.btnContinueLogin = page.getByRole("button", { name: "Continue", exact: true });
+    // Initialize locators - using CSS selectors for robustness
+    this.btnLogin = page.locator('button:has-text("LOG IN"), button[aria-label="LOG IN"]').first();
+    this.txtOrgId = page.locator('input#organizationName, input[name="organizationName"]').first();
+    this.btnContinueOrg = page.locator('button:has-text("CONTINUE")').first();
+    this.txtEmail = page.locator('input[name="username"], input[type="email"]').first();
+    this.txtPassword = page.locator('input[name="password"], input[type="password"]').first();
+    this.btnContinueLogin = page.locator('button:has-text("Continue")').first();
     this.dashboardContainer = page.locator("#facctumThemeProvider");
   }
 
@@ -101,20 +101,20 @@ export class LoginPage {
     const isOnLanding = await this.isOnLandingPage();
     if (isOnLanding) {
       // Use a more robust locator for the LOG IN button
-      const loginBtn = this.page.locator('button:has-text("LOG IN"), button:has-text("Log In")').first();
-      await loginBtn.click();
+      await this.btnLogin.waitFor({ state: "visible", timeout: 15000 });
+      await this.btnLogin.click();
       await this.page.waitForTimeout(500);
     }
 
     // Wait for org ID input to be visible
-    await this.txtOrgId.waitFor({ state: "visible", timeout: 10000 });
+    await this.txtOrgId.waitFor({ state: "visible", timeout: 15000 });
 
     // Enter Organisation ID
     await this.txtOrgId.fill(orgId);
     await this.btnContinueOrg.click();
 
     // Wait for email input to be visible
-    await this.txtEmail.waitFor({ state: "visible", timeout: 10000 });
+    await this.txtEmail.waitFor({ state: "visible", timeout: 15000 });
 
     // Enter email and password
     await this.txtEmail.fill(email);

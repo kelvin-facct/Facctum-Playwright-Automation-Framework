@@ -32,18 +32,37 @@ export class AuthHelper {
 
     // Navigate to landing page
     await page.goto(EnvConfig.BASE_URL);
+    await page.waitForLoadState("domcontentloaded");
     
-    // Click LOG IN button
-    await page.getByRole("button", { name: "LOG IN" }).click();
+    // Click LOG IN button - use multiple selectors for robustness
+    const loginBtn = page.locator('button:has-text("LOG IN"), button[aria-label="LOG IN"]').first();
+    await loginBtn.waitFor({ state: "visible", timeout: 15000 });
+    await loginBtn.click();
+    
+    // Wait for org ID input to be visible
+    const orgIdInput = page.locator('input#organizationName, input[name="organizationName"]').first();
+    await orgIdInput.waitFor({ state: "visible", timeout: 15000 });
     
     // Enter Organisation ID
-    await page.getByRole("textbox", { name: "Organisation ID" }).fill(orgId);
-    await page.getByRole("button", { name: "CONTINUE" }).click();
+    await orgIdInput.fill(orgId);
+    
+    // Click CONTINUE button
+    const continueOrgBtn = page.locator('button:has-text("CONTINUE"), button[type="submit"]').first();
+    await continueOrgBtn.click();
+    
+    // Wait for email input to be visible
+    const emailInput = page.locator('input[name="username"], input[type="email"]').first();
+    await emailInput.waitFor({ state: "visible", timeout: 15000 });
     
     // Enter email and password
-    await page.getByRole("textbox", { name: "Email address" }).fill(email);
-    await page.getByRole("textbox", { name: "Password" }).fill(password);
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
+    await emailInput.fill(email);
+    
+    const passwordInput = page.locator('input[name="password"], input[type="password"]').first();
+    await passwordInput.fill(password);
+    
+    // Click Continue button
+    const continueLoginBtn = page.locator('button:has-text("Continue"), button[type="submit"]').first();
+    await continueLoginBtn.click();
     
     // Wait for dashboard
     await page.locator("#facctumThemeProvider").waitFor({ timeout: EnvConfig.TIMEOUT });
