@@ -941,6 +941,9 @@ Key details:
 Steps for testing the Help Guide panel and documentation pages.
 
 ```gherkin
+# Background step - user is logged in
+Given user is logged in to the Facctum Platform
+
 # Open the Help Guide panel (click the help icon)
 When user opens the Help Guide panel
 When user clicks on the help icon in the header
@@ -951,15 +954,33 @@ Then the Help Guide panel should be displayed
 # Verify panel title
 And the Help Guide panel title should be "Facctum Platform Guide"
 
+# Verify content contains expected sections (data table)
+And the Help Guide content should contain the following sections:
+  | section              |
+  | Platform             |
+  | Login and Access     |
+  | Password Requirements|
+  | Home                 |
+  | Section Map          |
+
+# Verify Section Map contains navigation items (data table)
+And the Help Guide Section Map should contain:
+  | item          |
+  | Groups        |
+  | Roles         |
+  | Help          |
+  | Reports       |
+  | Users         |
+  | Login         |
+  | Profile View  |
+
 # Verify content contains expected text (data table)
 And the Help Guide content should contain the following text:
   | text                                                         |
-  | Platform Portal is the central administrative hub            |
-  | Login and Access                                             |
-  | Password Requirements                                        |
-
-# Expand Help Guide to new tab (click the launch/expand icon)
-When user clicks on the expand icon to open Help Guide in new tab
+  | Single Sign-On (SSO)                                         |
+  | Non-SSO Login                                                |
+  | Forgotten Password                                           |
+  | At least 8 characters                                        |
 
 # Close the Help Guide panel
 When user clicks the CLOSE button on the Help Guide panel
@@ -968,19 +989,125 @@ When user closes the Help Guide panel
 # Verify panel is closed
 Then the Help Guide panel should be closed
 
-# Verify all sidebar links open correctly with expected content
+# Verify iframe source domain
+And the Help Guide iframe should load from "assets.facctum.com"
+
+# Debug step - view Help Guide content
+Then user should see the Help Guide content
+
+# Open Help Guide in new tab (via expand icon)
+When user clicks on the expand icon to open Help Guide in new tab
+
+# Click sidebar link and verify page content
+When user clicks on sidebar link "Groups"
+Then the page title should be "Groups - Facctum Platform Guide"
+And the page content should contain "Groups enable administrators to bundle roles"
+
+# Section-specific sidebar link verification steps (recommended for better error reporting)
+# Each step includes the section name in logs and error messages for easier debugging
+
+# Verify Platform section sidebar links
+Then user should verify Platform section sidebar links:
+  | linkText      | expectedTitle                      | expectedContent                                           |
+  | Groups        | Groups - Facctum Platform Guide    | Groups enable administrators to bundle roles              |
+  | Roles         | Roles - Facctum Platform Guide     | Roles module enables administrators to define custom roles|
+  | Help          | Help - Facctum Platform Guide      | Help empowers users to quickly seek assistance            |
+  | Users         | Users - Facctum Platform Guide     | Users can be added or removed by administrators           |
+  | Login         | Login - Facctum Platform Guide     | Login process in the Facctum Platform supports            |
+  | Notifications | Notifications - Facctum Platform Guide | Notifications in the platform keep users up to date    |
+  | Profile View  | Profile View - Facctum Platform Guide | Profile View provide users with quick access           |
+
+# Verify FacctList section sidebar links
+Then user should verify FacctList section sidebar links:
+  | linkText              | expectedTitle                                 | expectedContent                                                    |
+  | Dashboard             | Dashboard - Facctum Platform Guide            | provides an at-a-glance overview of your FacctList environment     |
+  | Tasks                 | Tasks - Facctum Platform Guide                | Tasks provides users with access to a range of items               |
+  | Search                | Search - Facctum Platform Guide               | Search                                                             |
+  | Watchlists            | Watchlists - Facctum Platform Guide           | Watchlists are collections of records used to support screening    |
+  | Data Export           | Data Export - Facctum Platform Guide          | Data Export centralises the configuration                          |
+
+# Verify Watchlists submenu sidebar links
+Then user should verify Watchlists submenu sidebar links:
+  | linkText              | expectedTitle                                       | expectedContent                                                              |
+  | Commercial Lists      | Commercial Lists - Facctum Platform Guide           | Commercial Lists are watchlists provided by third-party vendor               |
+  | Regulatory Lists      | Regulatory Lists - Facctum Platform Guide           | Regulatory Lists are publicly available watchlists published                 |
+  | Internal Lists        | Internal Lists - Facctum Platform Guide             | Internal Lists—also known as Blocklists                                      |
+  | Reconciliation        | Reconciliation - Facctum Platform Guide             | Reconciliation enables you to compare official regulatory watchlists         |
+  | Suppressed and Enriched | Suppressed and Enriched - Facctum Platform Guide  | Suppressed and Enriched lets you manage one-off record or alias overrides    |
+
+# Verify FacctView section sidebar links
+Then user should verify FacctView section sidebar links:
+  | linkText              | expectedTitle                                      | expectedContent                                                              |
+  | Case Register         | Case Register - Facctum Platform Guide             | Case Register provides users with view of all compliance cases               |
+  | Screening Register    | Screening Register - Facctum Platform Guide        | Screening Register records and tracks all screening activities               |
+  | Entity Register       | Entity Register - Facctum Platform Guide           | Entity Register stores all entity information in the system                  |
+  | Customer Screening    | Customer Screening - Facctum Platform Guide        | Customer Screening helps institutions identify high-risk individuals         |
+  | Transaction Screening | Transaction Screening - Facctum Platform Guide     | Transaction Screening enables real-time screening of financial transactions  |
+  | Queues                | Queues - Facctum Platform Guide                    | Queues enable skill-based routing of compliance cases                        |
+
+# Verify Customer Screening submenu sidebar links
+Then user should verify Customer Screening submenu sidebar links:
+  | linkText                       | expectedTitle                                            | expectedContent                                                                        |
+  | CS Dashboard                   | Dashboard - Facctum Platform Guide                       | Customer Screening Dashboard provides a real-time overview of system performance       |
+  | On Demand Screening            | On Demand Screening - Facctum Platform Guide             | On-Demand Screening allows users to instantly screen individual customers              |
+  | Batch Screening                | Batch Screening - Facctum Platform Guide                 | Batch Screening enables users to screen large volumes of customer                      |
+  | CS Post-Screening Rules        | Post-Screening Rules - Facctum Platform Guide            | Post-Screening Rules enable organizations to define configurable validation            |
+  | CS Screening Profile           | Screening Profile - Facctum Platform Guide               | Screening Profile defines the rules, thresholds, and watchlists                        |
+
+# Verify Transaction Screening submenu sidebar links
+Then user should verify Transaction Screening submenu sidebar links:
+  | linkText                       | expectedTitle                                            | expectedContent                                                                        |
+  | TS Dashboard                   | Dashboard - Facctum Platform Guide                       | Transaction Screening Dashboard provides a real-time overview of transaction screening |
+  | Transaction Simulator          | Transaction Simulator - Facctum Platform Guide           | Transaction Simulator allows users to submit test transactions in JSON format          |
+  | Pre-Screening Rules            | Pre-Screening Rules - Facctum Platform Guide             | Pre-Screening Rules enable organizations to define configurable validation             |
+  | TS Post-Screening Rules        | Post-Screening Rules - Facctum Platform Guide            | Post-Screening Rules enable organizations to define configurable validation            |
+  | TS Screening Profile           | Screening Profile - Facctum Platform Guide               | Screening Profile defines the rules, thresholds, and watchlists                        |
+
+# Legacy step (backward compatible) - use section-specific steps above for better error reporting
 Then user should verify all sidebar links open correctly with expected content:
-  | linkText          | expectedTexts                                    |
-  | Platform Portal   | Platform Portal,user management,Login and Access |
-  | Tasks             | Tasks,workflow,permissions                       |
-  | List Management   | List Management,Commercial Lists                 |
+  | linkText      | expectedTitle                      | expectedContent                                           |
+  | Groups        | Groups - Facctum Platform Guide    | Groups enable administrators to bundle roles              |
 ```
 
 Key details:
+- Feature file: `src/features/helpGuide.feature` with scenarios for:
+  - Complete Help Guide verification (@HelpGuideComplete) - consolidated scenario that verifies:
+    - Panel display and title
+    - Iframe source from assets.facctum.com
+    - Content sections (Platform, Login and Access, Password Requirements, Home, Section Map)
+    - Section Map navigation items (Groups, Roles, Help, Reports, Users, Login, Profile View)
+    - Login and Access section text content
+    - Platform section sidebar links via expand to new tab (Groups, Roles, Help, Reports, Users, Login, Notifications, Profile View)
+    - FacctList section sidebar links (Dashboard, Tasks, Search, Watchlists, Data Export)
+    - FacctList > Watchlists submenu links (Commercial Lists, Regulatory Lists, Internal Lists, Reconciliation, Suppressed and Enriched)
+    - FacctView section sidebar links (Case Register, Screening Register, Entity Register, Customer Screening, Transaction Screening, Queues)
+    - FacctView > Customer Screening submenu links (CS Dashboard, On Demand Screening, Batch Screening, CS Post-Screening Rules, CS Screening Profile)
+    - FacctView > Transaction Screening submenu links (TS Dashboard, Transaction Simulator, Pre-Screening Rules, TS Post-Screening Rules, TS Screening Profile)
+  - Panel close functionality (@HelpGuideClose)
+- Background step verifies user is logged in via hooks
 - Content verification fetches iframe content and checks for expected text strings
-- Expand icon step stores the new page in `scenarioContext.get("helpGuidePage")`
-- Uses JavaScript evaluation to click sidebar links (handles hidden/collapsed links reliably)
-- Page content is verified directly from the rendered page
+- Uses `FacctumDashboardPage` page object for Help Guide interactions
 - Text matching is case-sensitive for content verification
-- Help Guide page is only closed if it was opened in a new tab (preserves main page)
-- Results are attached to Allure report as JSON
+- Results are attached to Allure report as JSON (includes section name for section-specific steps)
+- Tags: `@HelpGuide @org:facctum`
+- **Section-specific sidebar link steps** (recommended for better error reporting):
+  - `user should verify Platform section sidebar links:` - Platform section links
+  - `user should verify FacctList section sidebar links:` - FacctList section links
+  - `user should verify Watchlists submenu sidebar links:` - Watchlists submenu links
+  - `user should verify FacctView section sidebar links:` - FacctView section links
+  - `user should verify Customer Screening submenu sidebar links:` - Customer Screening submenu links
+  - `user should verify Transaction Screening submenu sidebar links:` - Transaction Screening submenu links
+  - Each step includes the section name in log messages (e.g., `[Platform] ✓ Link "Groups" verified successfully`)
+  - Error messages include section context for easier debugging (e.g., `[FacctView] 2 link(s) failed verification: ...`)
+- Legacy step `user should verify all sidebar links open correctly with expected content:` still available for backward compatibility
+- **Prefixed link names for duplicate links** (use these when the same link name appears in multiple sections):
+  - `Platform Reports` - Reports link in Platform section
+  - `FacctList Reports` - Reports link in FacctList section
+  - `FacctView Reports` - Reports link in FacctView section
+  - `FacctView Watchlists` - Watchlists link in FacctView section (distinct from FacctList Watchlists)
+- Platform section links: Groups, Roles, Help, Users, Login, Notifications, Profile View, Platform Reports
+- FacctList section links: Dashboard, Tasks, Search, Watchlists, Data Export, FacctList Reports
+- FacctList > Watchlists submenu links: Commercial Lists, Regulatory Lists, Internal Lists, Reconciliation, Suppressed and Enriched
+- FacctView section links: Case Register, Screening Register, Entity Register, Customer Screening, Transaction Screening, Queues, FacctView Reports, FacctView Watchlists
+- FacctView > Customer Screening submenu links: CS Dashboard, On Demand Screening, Batch Screening, CS Post-Screening Rules, CS Screening Profile
+- FacctView > Transaction Screening submenu links: TS Dashboard, Transaction Simulator, Pre-Screening Rules, TS Post-Screening Rules, TS Screening Profile
