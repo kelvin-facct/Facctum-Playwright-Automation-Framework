@@ -73,8 +73,14 @@ try {
 } catch (error) {
   console.log('\nTests completed with failures.');
 } finally {
-  // Clean up temp config
-  fs.unlinkSync(tempConfigPath);
+  // Clean up temp config (ignore if file doesn't exist)
+  try {
+    if (fs.existsSync(tempConfigPath)) {
+      fs.unlinkSync(tempConfigPath);
+    }
+  } catch (cleanupError) {
+    // Ignore cleanup errors
+  }
 }
 
 // Generate and open Allure report

@@ -7,7 +7,9 @@ import { TasksPage } from "./TasksPage";
 import { IBLDedupPage } from "./IBLDedupPage";
 import { CommercialListPage } from "./CommercialListPage";
 import { ProfileViewPage } from "./ProfileViewPage";
+import { IBLCreateSingleRecordPage } from "./IBLCreateSingleRecordPage";
 import { UKSANCTIONSadvfilterPage } from "./UKSANCTIONSadvfilterPage";
+import { OFACadvfilterPage } from "./OFACadvfilterPage";
 
 /**
  * PageManager - Factory class for lazy-loading and caching page objects.
@@ -24,7 +26,9 @@ export class PageManager {
   private iblDedupPage?: IBLDedupPage;
   private commercialListPage?: CommercialListPage;
   private profileViewPage?: ProfileViewPage;
+  private iblCreateSingleRecordPage?: IBLCreateSingleRecordPage;
   private ukSanctionsAdvFilterPage?: UKSANCTIONSadvfilterPage;
+  private ofacAdvFilterPage?: OFACadvfilterPage;
 
   constructor(page: Page) {
     this.page = page;
@@ -86,10 +90,24 @@ export class PageManager {
     return this.profileViewPage;
   }
 
+  getIBLCreateSingleRecordPage(): IBLCreateSingleRecordPage {
+    if (!this.iblCreateSingleRecordPage) {
+      this.iblCreateSingleRecordPage = new IBLCreateSingleRecordPage(this.page);
+    }
+    return this.iblCreateSingleRecordPage;
+  }
+
   getUKSanctionsAdvFilterPage(): UKSANCTIONSadvfilterPage {
     if (!this.ukSanctionsAdvFilterPage) {
       this.ukSanctionsAdvFilterPage = new UKSANCTIONSadvfilterPage(this.page);
     }
     return this.ukSanctionsAdvFilterPage;
+  }
+
+  getOFACAdvFilterPage(): OFACadvfilterPage {
+    if (!this.ofacAdvFilterPage) {
+      this.ofacAdvFilterPage = new OFACadvfilterPage(this.page);
+    }
+    return this.ofacAdvFilterPage;
   }
 }

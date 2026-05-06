@@ -1,7 +1,15 @@
-import { Locator, Page, expect } from "@playwright/test";
+import { Locator, Page, FrameLocator, expect } from "@playwright/test";
 import { PlaywrightActions } from "../helpers/playwrightActions";
 import { logger } from "../utils/logger";
 
+/**
+ * FacctumDashboardPage - Page object for the Facctum Platform dashboard.
+ * 
+ * Handles:
+ * - Product card navigation (List Management, Customer Screening, etc.)
+ * - Help Guide panel interactions
+ * - User profile and logout
+ */
 export class FacctumDashboardPage {
   private actions: PlaywrightActions;
   
@@ -11,12 +19,16 @@ export class FacctumDashboardPage {
   private transactionScreeningCard: Locator;
   private transactionMonitoringCard: Locator;
 
-  // Help Guide panel locators
+  // Help Guide panel locators - verified with MCP
   private helpIconHeader: Locator;
   private helpGuidePanel: Locator;
   private helpGuidePanelTitle: Locator;
   private helpGuideIframe: Locator;
+  private helpGuideIframeLocator: FrameLocator;
   private helpGuideCloseButton: Locator;
+  private helpGuideLaunchIcon: Locator;
+  private helpGuideFullscreenIcon: Locator;
+  private helpGuideCloseIcon: Locator;
 
   constructor(private page: Page) {
     this.actions = new PlaywrightActions(page);
@@ -27,12 +39,20 @@ export class FacctumDashboardPage {
     this.transactionScreeningCard = page.locator('.product-card:has-text("Transaction Screening")').first();
     this.transactionMonitoringCard = page.locator('.product-card:has-text("Transaction Monitoring")').first();
 
-    // Initialize Help Guide panel locators
-    this.helpIconHeader = page.locator('.facct-guidedocs svg, [data-testid="HelpOutlineIcon"]').first();
+    // Initialize Help Guide panel locators - verified with MCP
+    this.helpIconHeader = page.locator('[data-testid="HelpOutlineIcon"]');
     this.helpGuidePanel = page.locator('.MuiDrawer-paperAnchorRight');
-    this.helpGuidePanelTitle = page.locator('.facct-drawer-header-wrapper .header-content');
+    this.helpGuidePanelTitle = page.locator('.header-content[role="banner"]');
+    
+    // Iframe locators - the iframe loads documentation from assets.facctum.com
     this.helpGuideIframe = page.locator('iframe[title="Facctum Docx"]');
+    this.helpGuideIframeLocator = page.frameLocator('iframe[title="Facctum Docx"]');
+    
+    // Panel action buttons - verified with MCP
     this.helpGuideCloseButton = page.locator('.facct-drawer-footer-wrapper button:has-text("CLOSE")');
+    this.helpGuideLaunchIcon = page.locator('[data-testid="LaunchIcon"]');
+    this.helpGuideFullscreenIcon = page.locator('[data-testid="FullscreenIcon"]');
+    this.helpGuideCloseIcon = page.locator('[data-testid="CloseIcon"]');
   }
 
   /**
@@ -177,6 +197,8 @@ export class FacctumDashboardPage {
   async openHelpGuidePanel(): Promise<void> {
     await this.helpIconHeader.click();
     await this.helpGuidePanel.waitFor({ state: "visible", timeout: 10000 });
+    // Wait for iframe to load
+    await this.helpGuideIframe.waitFor({ state: "visible", timeout: 10000 });
     logger.info("Help Guide panel opened");
   }
 
@@ -230,30 +252,44 @@ export class FacctumDashboardPage {
   }
 
   /**
+   * Gets the text content from the Help Guide iframe using frameLocator.
+   * This method accesses the iframe content directly through Playwright's frame handling.
+   */
+  async getHelpGuideIframeContent(): Promise<string> {
+    // Wait for iframe to be loaded
+    await this.helpGuideIframe.waitFor({ state: "visible", timeout: 10000 });
+    
+    // Use frameLocator to access iframe content directly - this avoids CORS issues
+    const frameLocator = this.page.frameLocator('iframe[title="Facctum Docx"]');
+    
+    // Wait for the body to be visible in the iframe
+    await frameLocator.locator("body").waitFor({ state: "visible", timeout: 10000 });
+    
+    // Get the text content from the iframe body
+    const content = await frameLocator.locator("body").innerText();
+    
+    return content;
+  }
+
+  /**
    * Fetches and returns the text content from the Help Guide iframe.
+   * Uses Playwright's frameLocator to access iframe content directly (avoids CORS issues).
    */
   async getHelpGuideContent(): Promise<string> {
-    const iframeSrc = await this.getHelpGuideIframeSrc();
+    // Wait for iframe to be loaded
+    await this.helpGuideIframe.waitFor({ state: "visible", timeout: 10000 });
     
-    if (!iframeSrc) {
-      throw new Error("Help Guide iframe src not found");
-    }
+    // Use frameLocator to access iframe content directly - this avoids CORS issues
+    const frameLocator = this.page.frameLocator('iframe[title="Facctum Docx"]');
     
-    // Fetch the iframe content
-    const iframeContent = await this.page.evaluate(async (src) => {
-      const response = await fetch(src);
-      return response.text();
-    }, iframeSrc);
+    // Wait for the body to be visible in the iframe
+    await frameLocator.locator("body").waitFor({ state: "visible", timeout: 10000 });
     
-    // Extract text content from HTML
-    const textContent = iframeContent
-      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
+    // Get the text content from the iframe body
+    const content = await frameLocator.locator("body").innerText();
     
-    return textContent;
+    logger.info(`Help Guide iframe content retrieved (${content.length} characters)`);
+    return content;
   }
 
   /**
@@ -278,5 +314,125 @@ export class FacctumDashboardPage {
     }
     
     return missingTexts;
+  }
+
+  /**
+   * Expands the Help Guide panel to a new tab by clicking the launch/expand icon.
+   * @returns The new Page object for the Help Guide documentation
+   */
+  async expandHelpGuideToNewTab(): Promise<Page> {
+    // Get the iframe src first
+    const iframeSrc = await this.getHelpGuideIframeSrc();
+    if (!iframeSrc) {
+      throw new Error("Help Guide iframe src not found");
+    }
+
+    // Wait for the new page to open when clicking the launch icon
+    const [newPage] = await Promise.all([
+      this.page.context().waitForEvent("page"),
+      this.helpGuideLaunchIcon.click()
+    ]);
+
+    // Wait for the new page to load
+    await newPage.waitForLoadState("networkidle");
+    
+    logger.info(`Help Guide expanded to new tab: ${newPage.url()}`);
+    return newPage;
+  }
+
+  /**
+   * Clicks on a sidebar link in the Help Guide page (for use with the expanded page).
+   * Uses Playwright locators instead of evaluate for better reliability.
+   * @param helpGuidePage - The Help Guide page object
+   * @param linkText - The text of the link to click
+   */
+  async clickHelpGuideSidebarLink(helpGuidePage: Page, linkText: string): Promise<void> {
+    // Use Playwright's getByRole for better accessibility and reliability
+    const link = helpGuidePage.getByRole("link", { name: linkText, exact: true });
+    
+    // If exact match not found, try partial match
+    if (await link.count() === 0) {
+      const partialLink = helpGuidePage.locator(`a:has-text("${linkText}")`).first();
+      await partialLink.click();
+    } else {
+      await link.click();
+    }
+
+    await helpGuidePage.waitForLoadState("networkidle");
+    logger.info(`Clicked on sidebar link: ${linkText}`);
+  }
+
+  /**
+   * Gets the page title from the Help Guide page.
+   * @param helpGuidePage - The Help Guide page object
+   */
+  async getHelpGuidePageTitle(helpGuidePage: Page): Promise<string> {
+    return await helpGuidePage.title();
+  }
+
+  /**
+   * Gets the main content text from the Help Guide page.
+   * @param helpGuidePage - The Help Guide page object
+   */
+  async getHelpGuidePageContent(helpGuidePage: Page): Promise<string> {
+    // Try to get content from main content area first
+    const contentSelectors = [".content", "article", "main", ".md-content"];
+    
+    for (const selector of contentSelectors) {
+      const element = helpGuidePage.locator(selector).first();
+      if (await element.count() > 0) {
+        return await element.innerText();
+      }
+    }
+    
+    // Fallback to body
+    return await helpGuidePage.locator("body").innerText();
+  }
+
+  /**
+   * Verifies a sidebar link opens with expected title and content.
+   * @param helpGuidePage - The Help Guide page object
+   * @param linkText - The text of the link to click
+   * @param expectedTitle - Expected page title
+   * @param expectedContent - Expected content text
+   */
+  async verifyHelpGuideSidebarLink(
+    helpGuidePage: Page, 
+    linkText: string, 
+    expectedTitle: string, 
+    expectedContent: string
+  ): Promise<{ passed: boolean; actualTitle: string; error?: string }> {
+    try {
+      await this.clickHelpGuideSidebarLink(helpGuidePage, linkText);
+      
+      const actualTitle = await this.getHelpGuidePageTitle(helpGuidePage);
+      const content = await this.getHelpGuidePageContent(helpGuidePage);
+      
+      if (actualTitle !== expectedTitle) {
+        return {
+          passed: false,
+          actualTitle,
+          error: `Title mismatch: expected "${expectedTitle}", got "${actualTitle}"`
+        };
+      }
+      
+      if (!content.includes(expectedContent)) {
+        return {
+          passed: false,
+          actualTitle,
+          error: `Content does not contain expected text: "${expectedContent}"`
+        };
+      }
+      
+      logger.info(`Link "${linkText}" verified: title="${actualTitle}"`);
+      return { passed: true, actualTitle };
+      
+    } catch (error) {
+      return {
+        passed: false,
+        actualTitle: "",
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
   }
 }

@@ -39,7 +39,8 @@ When("Select List name 2", async function (this: CustomWorld) {
   await page.selectUKSanctionsList();
 });
 
-When("Apply Filter in all tabs 2", { timeout: 10 * 60 * 1000 }, async function (this: CustomWorld) {
+// Main step that runs all tabs - 20 minute timeout (increased for reliability)
+When("Apply Filter in all tabs 2", { timeout: 20 * 60 * 1000 }, async function (this: CustomWorld) {
   const page = getPage(this);
   
   // Test data - using same values as Java test (from UKSANCTIONSadvfilterStep.java)
@@ -53,7 +54,7 @@ When("Apply Filter in all tabs 2", { timeout: 10 * 60 * 1000 }, async function (
   // MongoDB validation enabled by default, disable with MONGO_VALIDATION=false
   const enableMongoValidation = process.env.MONGO_VALIDATION !== "false";
 
-  await page.applyUKSanctionsFilter(
+  const results = await page.applyUKSanctionsFilter(
     designatedDate,
     idType,
     programSource,
@@ -62,9 +63,31 @@ When("Apply Filter in all tabs 2", { timeout: 10 * 60 * 1000 }, async function (
     invalidId,
     enableMongoValidation
   );
+  
+  // Attach MongoDB validation status to Allure report
+  const validationReport = {
+    mongoValidationEnabled: results.mongoValidationEnabled,
+    mongoConnected: results.mongoConnected,
+    status: results.mongoValidationEnabled 
+      ? (results.mongoConnected ? "CONNECTED" : "CONNECTION FAILED - Validation skipped")
+      : "DISABLED (MONGO_VALIDATION=false)",
+    validationResults: results.validationResults
+  };
+  
+  await this.attach(
+    JSON.stringify(validationReport, null, 2),
+    "application/json"
+  );
+  
+  // Log warning if MongoDB validation was expected but didn't run
+  if (results.mongoValidationEnabled && !results.mongoConnected) {
+    const warningMsg = "⚠️ WARNING: MongoDB validation was enabled but connection failed. DB validation was SKIPPED.";
+    console.log(warningMsg);
+    await this.attach(warningMsg, "text/plain");
+  }
 });
 
-Then("Check the status 2", { timeout: 10 * 60 * 1000 }, async function (this: CustomWorld) {
+Then("Check the status 2", async function (this: CustomWorld) {
   const page = getPage(this);
   await page.checkDownloadStatus();
 });

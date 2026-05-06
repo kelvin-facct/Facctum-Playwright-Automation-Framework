@@ -770,6 +770,7 @@ export class UKSANCTIONSadvfilterPage {
    * Main method to apply UK SANCTIONS filter across all tabs
    * Equivalent to Java's apply_uksanctions_filter method
    * Includes MongoDB validation for UI count verification
+   * @returns Object containing validation results for reporting
    */
   async applyUKSanctionsFilter(
     designatedDate: string,
@@ -779,14 +780,30 @@ export class UKSANCTIONSadvfilterPage {
     type: string,
     invalidId: string,
     enableMongoValidation: boolean = false
-  ): Promise<void> {
+  ): Promise<{
+    mongoValidationEnabled: boolean;
+    mongoConnected: boolean;
+    validationResults: Array<{ tab: string; uiCount: number; dbCount?: number; passed?: boolean; message?: string }>;
+  }> {
+    const results: {
+      mongoValidationEnabled: boolean;
+      mongoConnected: boolean;
+      validationResults: Array<{ tab: string; uiCount: number; dbCount?: number; passed?: boolean; message?: string }>;
+    } = {
+      mongoValidationEnabled: enableMongoValidation,
+      mongoConnected: false,
+      validationResults: []
+    };
+
     // Initialize MongoDB if validation is enabled
     if (enableMongoValidation) {
       try {
         await this.initMongoDB();
+        results.mongoConnected = true;
       } catch (error) {
         console.log(`[applyUKSanctionsFilter] MongoDB initialization failed: ${error}`);
         console.log("[applyUKSanctionsFilter] Continuing without MongoDB validation");
+        results.mongoConnected = false;
       }
     }
 
@@ -825,10 +842,26 @@ export class UKSANCTIONSadvfilterPage {
         console.log(`[apply_uksanctions_filter] UI Filtered Count (Id Type Select All): ${uiCount}`);
 
         // MongoDB validation (if enabled)
-        if (enableMongoValidation && this.mongoQueries) {
+        if (enableMongoValidation && this.mongoQueries && results.mongoConnected) {
           const validationResult = await this.validateUICountWithMongoDB(uiCount);
           console.log(`[apply_uksanctions_filter] MongoDB Count (UK SANCTIONS Active with ID Type): ${validationResult.dbCount}`);
           console.log(`[apply_uksanctions_filter] ${validationResult.message}`);
+          
+          // Store validation result for reporting
+          results.validationResults.push({
+            tab: "Active",
+            uiCount: uiCount,
+            dbCount: validationResult.dbCount,
+            passed: validationResult.passed,
+            message: validationResult.message
+          });
+        } else {
+          // Store UI count only (no MongoDB validation)
+          results.validationResults.push({
+            tab: "Active",
+            uiCount: uiCount,
+            message: results.mongoConnected ? "MongoDB validation not enabled" : "MongoDB not connected"
+          });
         }
 
         // Download as Tab Separated and Excel (like Java)
@@ -921,6 +954,8 @@ export class UKSANCTIONSadvfilterPage {
         await this.closeMongoDB();
       }
     }
+    
+    return results;
   }
 
   /**

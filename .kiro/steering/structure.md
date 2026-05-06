@@ -17,7 +17,15 @@ src/
 │   ├── LoginPage.ts          # Login flow page object
 │   ├── FacctumDashboardPage.ts  # Dashboard/Home page object
 │   ├── PreScreeningRulePage.ts  # Pre-screening rules page object
-│   ├── ListManagementPage.ts    # List management page object
+│   ├── ListManagementPage.ts    # List management page object for Internal List operations
+│   │                         # Flow: Watchlist → Internal List → Search/Select list → Add Records
+│   │                         # Key methods: clickWatchlistDropdown, clickInternalList, searchAndSelectList,
+│   │                         #              clickAddRecord, selectBulkUploadOption, uploadFile,
+│   │                         #              enterBulkComments, clickSubmitForApproval, performBulkUpload
+│   │                         # searchAndSelectList: Searches by list name, uses multiple fallback selectors
+│   │                         #                      to find and click the list (aria-label, link-cell, td, tr)
+│   │                         # performBulkUpload: Convenience method combining bulk upload steps
+│   │                         # Access via: pageManager.getListManagementPage()
 │   ├── TasksPage.ts          # Tasks page for record approval workflows
 │   │                         # Methods: claimRecord, acceptRecord(comment?), rejectRecord(comment?), 
 │   │                         #          unclaimRecord, claimAndAcceptRecord
@@ -33,16 +41,77 @@ src/
 │   │                         #              clickCloseOnDuplicatesModal, clickModifyAttributes,
 │   │                         #              clickRecordId (alias), clickRecordIdAndGetNewTab (opens record in new tab, returns Page)
 │   │                         # Constants: LIST_NAME ("Facctum IBL"), NAME (test entity name)
-│   └── UKSANCTIONSadvfilterPage.ts  # UK Sanctions advanced filter page object
-│                             # Flow: Watchlist → Regulatory List → UK SANCTIONS → Filter/Download records
+│   │                         # Access via: pageManager.getIBLDedupPage()
+│   ├── IBLCreateSingleRecordPage.ts  # IBL Single Record Creation page object (migrated from Java)
+│   │                         # Flow: Watchlist → Internal List → Search list → Add Records → Single record →
+│   │                         #       Select record type → Fill mandatory fields → Submit for approval
+│   │                         # Record types: Individual, Entity, Bank, Vessel
+│   │                         # NOTE: Default list "Facctview IBL" only supports Individual type.
+│   │                         #       Entity/Bank/Vessel require a list configured for those types.
+│   │                         # Sections: Names, ID Numbers, Address, Gender, Dates, Additional Details
+│   │                         # Key methods: navigateToInternalList, searchAndOpenList, openSingleRecordForm,
+│   │                         #              selectRecordType, enterFirstName, enterLastName, enterIdValue,
+│   │                         #              selectIdType, enterAddressLine1, selectAddressCountry, selectGender,
+│   │                         #              enterDateOfBirth, clickSubmitForApproval, enterSubmitComment, clickFinalSubmit,
+│   │                         #              fillMandatoryFieldsForIndividual, fillMandatoryFieldsForEntity,
+│   │                         #              fillMandatoryFieldsForVessel, createAndSubmitRecord,
+│   │                         #              clickPendingTab, withdrawLastRecord (smart: finds first withdrawable record),
+│   │                         #              withdrawRecordById, clickKebabMenuForRow(index)
+│   │                         # Customer Type: selectCustomerType(customerType)
+│   │                         # Alias/Names: clickAddAlias, enterFullName (for Entity/Bank)
+│   │                         # World Check & Locations: enterWorldCheckId, enterLocation, clickAddLocation,
+│   │                         #              clickRemoveLocation, enterLocationByIndex, fillWorldCheckAndLocations
+│   │                         # Country dropdowns (multi-select): selectCountryOfIncorporation, selectOtherAffiliatedCountries
+│   │                         # Additional Details tab: clickAdditionalDetails, selectBusinessUnit, selectSubBusinessUnit,
+│   │                         #              enterBusinessUnitContact, selectExpiryDate, enterComments, enterReason,
+│   │                         #              enterFurtherComments, enterReferenceInformation, fillAdditionalDetailsTab
+│   │                         # ID Number section: selectRelatedIdAndEnterValue, fillIdNumberSection
+│   │                         # Footer buttons: clickCancel, clickVerifyDuplicate, clickSaveAsDraft, clickSubmitForApproval
+│   │                         # Constants: DEFAULT_LIST_NAME ("Facctview IBL"), TEST_DATA_PATH, SHEET_NAME
+│   │                         # Static: loadTestDataFromExcel() - loads test data from Excel file
+│   │                         # Access via: pageManager.getIBLCreateSingleRecordPage()
+│   ├── CommercialListPage.ts  # Commercial List page object for WC Main Premium
+│   │                         # Flow: Dashboard → List Management → Watchlist → Commercial list → WC Main Premium
+│   │                         # Key methods: navigateToCommercialList, openWCMainPremium, findCleanRecord,
+│   │                         #              openRecordById, searchAndOpenRecord, closeProfileView, getCurrentUrl
+│   │                         # findCleanRecord: Iterates through records to find one without pending approval
+│   │                         #                  (checks for suppress button visibility in profile view)
+│   │                         # Pagination: Handles multi-page navigation with tabindex check
+│   │                         # Access via: pageManager.getCommercialListPage()
+│   ├── ProfileViewPage.ts    # Record Profile View page object for Suppress/Enrich operations
+│   │                         # Operations: Suppress/Enrich Record (SER), Suppress Attribute (SA),
+│   │                         #             Enrich Attribute (EA), Edit Profile View (EPV)
+│   │                         # Key methods: clickSuppressEnrich, fillSuppressEnrichForm, clickSubmit,
+│   │                         #              suppressAttribute, fillSuppressAttributeForm,
+│   │                         #              clickEnrichOnSection, fillEnrichAliasForm, fillEnrichIdForm,
+│   │                         #              fillEnrichDobForm, clickEdit, verifyAuditTrail,
+│   │                         #              hasVersionConflictError, hasActionSucceeded, closeProfileView
+│   │                         # Form fields: tags (multi-select), reason, reviewPeriod, comment, attachment
+│   │                         # Validation: isProfileViewOpen, hasPendingApprovalWarning, isSubmitEnabled
+│   │                         # Access via: pageManager.getProfileViewPage()
+│   ├── UKSANCTIONSadvfilterPage.ts  # UK Sanctions advanced filter page object
+│   │                         # Flow: Watchlist → Regulatory List → UK SANCTIONS → Filter/Download records
+│   │                         # Tabs: Records, Downloads, Active, Error, Deleted
+│   │                         # Delta view tabs: New, Amended, Deleted, Stable, Error
+│   │                         # Filter categories: Designated Date, Id Type, Program Source, Regime Name, Type
+│   │                         # Download formats: Excel (.xlsx), Tab separated (.tsv)
+│   │                         # Key methods: applyUKSanctionsFilter (main orchestration across all tabs),
+│   │                         #              applyFiltersForTab (apply individual filters for a specific tab),
+│   │                         #              checkDownloadStatus (verify download completion and download file)
+│   │                         # Key locators: filterButton, filterPanel, applyButton, downloadButton
+│   │                         # Access via: pageManager.getUKSanctionsAdvFilterPage()
+│   └── OFACadvfilterPage.ts  # OFAC advanced filter page object
+│                             # Flow: Watchlist → Regulatory List → OFAC → Filter/Download records
 │                             # Tabs: Records, Downloads, Active, Error, Deleted
 │                             # Delta view tabs: New, Amended, Deleted, Stable, Error
-│                             # Filter categories: Designated Date, Id Type, Program Source, Regime Name, Type
+│                             # Filter categories: Address country, Citizenship country, Nationality country,
+│                             #                    Program name, Type, Last Updated Date (date range)
 │                             # Download formats: Excel (.xlsx), Tab separated (.tsv)
-│                             # Key methods: applyUKSanctionsFilter (main orchestration across all tabs),
-│                             #              applyFiltersForTab (apply individual filters for a specific tab),
-│                             #              checkDownloadStatus (verify download completion and download file)
+│                             # Key methods: applyOFACFilter (main orchestration across all tabs),
+│                             #              applyFiltersForTab, applyAllFiltersCombined, checkDownloadStatus
 │                             # Key locators: filterButton, filterPanel, applyButton, downloadButton
+│                             # Test data: address=Cuba, citizenship=Egypt, nationality=Egypt, program=CAR, type=Individual
+│                             # Access via: pageManager.getOFACAdvFilterPage()
 │
 ├── helpers/          # Reusable utilities
 │   ├── authHelper.ts         # Reusable authentication functions
@@ -257,7 +326,7 @@ Key methods:
 MongoDB helper for validating UI data against MongoDB database. Equivalent to Java's MongoDBUtil class.
 
 ```typescript
-import { MongoDBHelper, UKSanctionsMongoQueries, getMongoHelper, closeMongoHelper } from "../helpers/mongoHelper";
+import { MongoDBHelper, UKSanctionsMongoQueries, OFACMongoQueries, getMongoHelper, closeMongoHelper } from "../helpers/mongoHelper";
 
 // Method 1: Instance-based (recommended for multiple queries)
 const mongo = new MongoDBHelper({
@@ -325,11 +394,44 @@ const validation = await ukSanctions.validateUICount(uiCount, 2000);
 // Returns: { passed: boolean, uiCount: number, dbCount: number, message: string }
 
 await mongo.disconnect();
+
+// Method 4: OFAC specific queries
+const mongo = new MongoDBHelper();
+await mongo.connect();
+const ofac = new OFACMongoQueries(mongo);
+
+// Get Active records with Address Country count
+const activeCount = await ofac.getActiveRecordsWithAddressCount("OFAC Enhanced");
+
+// Get records by status
+const errorCount = await ofac.getRecordsByStatusCount(3000, "OFAC Enhanced");
+
+// Get filtered records with multiple criteria
+const filteredCount = await ofac.getFilteredRecords({
+  listName: "OFAC Enhanced",
+  statusId: 2000,
+  hasAddressCountry: true,
+  hasCitizenshipCountry: true,
+  hasNationalityCountry: true,
+  hasProgramName: true,
+  entityType: "Individual"
+});
+
+// Validate UI count against MongoDB for OFAC
+const validation = await ofac.validateUICount(uiCount, "OFAC Enhanced", 2000);
+// Returns: { passed: boolean, uiCount: number, dbCount: number, message: string }
+
+// Validate UI count with specific filter type
+const filterValidation = await ofac.validateUICountWithFilter(uiCount, "address", "OFAC Enhanced");
+// filterType options: "address" | "citizenship" | "nationality" | "program" | "type"
+
+await mongo.disconnect();
 ```
 
 Key classes:
 - `MongoDBHelper` - Main MongoDB connection and query helper
 - `UKSanctionsMongoQueries` - UK SANCTIONS specific query methods
+- `OFACMongoQueries` - OFAC specific query methods
 - `getMongoHelper()` / `closeMongoHelper()` - Singleton helper functions
 
 Key methods (MongoDBHelper):
@@ -569,6 +671,98 @@ Key details:
 - Record links open in new tabs - use `clickRecordId(index)` or `clickRecordIdAndGetNewTab(index)` (both return the new `Page` object)
 - Store the returned page in scenario context for further interactions on the new tab
 
+### IBL Create Single Record Steps (iblCreateSingleRecord.steps.ts)
+Steps for testing the IBL (Internal Block List) single record creation workflow.
+
+```gherkin
+# Navigation steps
+When user clicks on Watchlist dropdown
+When user clicks on Internal list option
+When user navigates to Internal List
+
+# List search and selection
+When user searches for list "Facctview IBL"
+When user clicks on list "Facctview IBL"
+When user searches and opens list "Facctview IBL"
+When user searches and opens the default IBL list
+
+# Add record form
+When user clicks on Add Records button
+When user selects Single record option
+When user opens the single record form
+When User selects record type "Individual"
+
+# Name entry
+When User enters first name "John"
+When User enters last name "Doe"
+When User enters full name "Test Entity Ltd"
+When User clicks Add Alias button
+When User enters alias first name "Johnny" at index 0
+When User enters alias last name "D" at index 0
+
+# ID Number section
+When User enters account number "ACC123456"
+When User enters customer ID "CUST789"
+When User enters government ID "GOV456"
+When User selects Related ID and enters value "REL123"
+When User clicks on ID Type dropdown for row 4
+When User selects Related ID option
+When User enters ID value "VALUE123" in row 4
+When User fills all ID numbers with Account "ACC1" Customer "CUST1" Government "GOV1" Related "REL1"
+
+# Address section
+When User enters address line 1 "123 Main Street"
+When User selects address country "United States"
+
+# Gender and dates
+When User selects gender "Male"
+When User enters date of birth "01/01/1990"
+
+# Customer type and additional fields
+When User selects customer type "High Risk"
+When User enters World Check ID "WC123"
+When User enters location "New York"
+When User clicks Add Location button
+
+# Additional Details tab
+When User clicks on Additional Details tab
+When User selects business unit "Compliance"
+When User selects sub business unit "AML"
+When User enters business unit contact "contact@example.com"
+When User selects expiry date "31/12/2025"
+When User enters comments "Test comment"
+When User enters reason "Test reason"
+When User enters further comments "Additional info"
+When User enters reference information "REF123"
+
+# Submit workflow
+When User clicks Submit for Approval button
+When User enters submit comment "Submitting for review"
+When User clicks Final Submit button
+
+# Pending/Withdraw workflow
+When User clicks on Pending tab
+When User withdraws the last record
+When User withdraws record by ID "REC123"
+
+# Full flow steps
+When User creates and submits Individual record with first name "John" last name "Doe"
+When User fills mandatory fields for Individual record
+When User fills mandatory fields for Entity record
+When User fills mandatory fields for Vessel record
+```
+
+Key details:
+- Uses `IBLCreateSingleRecordPage` page object for all interactions
+- Default list name: "Facctview IBL" (configurable via step parameter)
+- Supports record types: Individual, Entity, Bank, Vessel
+- NOTE: Default list "Facctview IBL" only supports Individual type; other types require a list configured for those record types
+- ID Number section supports: Account Number, Customer ID, Government ID, Related ID
+- Related ID requires selecting from dropdown before entering value
+- Row-based ID entry allows filling specific rows (1-based index in steps, converted to 0-based internally)
+- Full flow steps combine multiple steps for common workflows
+- Withdraw workflow allows removing pending records by ID or selecting the last withdrawable record
+
 ### UK Sanctions Advanced Filter Steps (ukSanctionsAdvFilter.steps.ts)
 Steps for testing the UK SANCTIONS regulatory list advanced filtering and download functionality.
 
@@ -641,10 +835,115 @@ Key details:
   - Delta view toggle and navigation
   - Download functionality (Excel and Tab Separated formats)
 
+### OFAC Advanced Filter Steps (ofacAdvFilter.steps.ts)
+Steps for testing the OFAC regulatory list advanced filtering and download functionality.
+
+```gherkin
+# Background/Setup steps (shared across scenarios)
+Given Facctlist Login 1
+When Navigate to Regulatory List 1
+When Select List name 1
+
+# Individual tab filter steps (granular testing)
+When Apply Filter in Active tab
+When Apply Filter in Error tab
+When Apply Filter in Delete tab
+When Apply Filter in New tab
+When Apply Filter in Amend tab
+When Apply Filter in Delta Delete tab
+When Apply Filter in Stable tab
+When Apply Filter in Delta Error tab
+Then the filter operations should complete successfully
+
+# Delta view toggle
+When user toggles OFAC Delta view
+Then the Delta view should be enabled
+
+# Downloads tab
+When user goes to OFAC Downloads tab
+Then Check the status 1
+
+# Legacy full flow step (applies filters across all tabs - may timeout)
+When Apply Filter in all tabs 1
+Then Check the status 1
+
+# Filter panel operations
+When user opens the OFAC filter panel
+When user closes the OFAC filter panel
+When user applies the OFAC filter
+
+# Individual filter selections (Select All)
+When user selects Address Country filter with Select All
+When user selects Citizenship Country filter with Select All
+When user selects Nationality Country filter with Select All
+When user selects Program Name filter with Select All
+When user selects OFAC Type filter with Select All
+
+# Date range filter
+When user sets Last Updated Date filter from "30/08/2024" to "22/12/2025"
+
+# Search and select specific values
+When user searches and selects Address Country "Cuba"
+When user searches and selects Citizenship Country "Egypt"
+When user searches and selects Nationality Country "Egypt"
+When user searches and selects Program Name "CAR"
+When user searches and selects OFAC Type "Individual"
+
+# Tab navigation
+When user clicks on OFAC Active tab
+When user clicks on OFAC Error tab
+When user clicks on OFAC Delete tab
+
+# Delta view
+When user toggles OFAC Delta view
+When user clicks on OFAC New tab
+When user clicks on OFAC Amend tab
+When user clicks on OFAC Delta Delete tab
+When user clicks on OFAC Stable tab
+When user clicks on OFAC Delta Error tab
+
+# Download operations
+When user downloads OFAC as Tab Separated
+When user downloads OFAC as Excel
+
+# Assertions
+Then the OFAC download button should be visible
+Then the OFAC filter panel should be visible
+Then the OFAC filter panel should be closed
+Then the OFAC toaster message should be displayed
+```
+
+Key details:
+- Uses `OFACadvfilterPage` page object for all interactions
+- Flow: Watchlist → Regulatory List → OFAC → Apply filters → Download
+- Tabs: Records, Downloads, Active, Error, Deleted
+- Delta view tabs: New, Amended, Deleted, Stable, Error
+- Filter categories: Address Country, Citizenship Country, Nationality Country, Program Name, Type, Last Updated Date (date range)
+- Download formats: Excel (.xlsx), Tab separated (.tsv)
+- Individual tab filter steps (`Apply Filter in Active tab`, `Apply Filter in Error tab`, etc.) for granular testing
+- Search and select steps allow filtering by specific values (e.g., "Cuba", "Egypt", "CAR", "Individual")
+- Feature file: `src/features/OFACadvfilter.feature` with scenarios (@ApplyingofOFACFilter):
+  - Active Tab filter application
+  - Error Tab filter application
+  - Delete Tab filter application
+  - Delta view toggle
+  - New Tab (Delta) filter application
+  - Amend Tab (Delta) filter application
+  - Delta Delete Tab filter application
+  - Stable Tab (Delta) filter application
+  - Delta Error Tab filter application
+  - Download status verification
+- Background steps handle login and navigation (shared across all scenarios)
+- Legacy step (`Apply Filter in all tabs 1`) still available for backward compatibility
+- Migrated from Java Selenium test (OFACadvfilterStep.java)
+
 ### Help Guide Steps (helpGuide.steps.ts)
 Steps for testing the Help Guide panel and documentation pages.
 
 ```gherkin
+# Background step - user is logged in
+Given user is logged in to the Facctum Platform
+
 # Open the Help Guide panel (click the help icon)
 When user opens the Help Guide panel
 When user clicks on the help icon in the header
@@ -655,15 +954,33 @@ Then the Help Guide panel should be displayed
 # Verify panel title
 And the Help Guide panel title should be "Facctum Platform Guide"
 
+# Verify content contains expected sections (data table)
+And the Help Guide content should contain the following sections:
+  | section              |
+  | Platform             |
+  | Login and Access     |
+  | Password Requirements|
+  | Home                 |
+  | Section Map          |
+
+# Verify Section Map contains navigation items (data table)
+And the Help Guide Section Map should contain:
+  | item          |
+  | Groups        |
+  | Roles         |
+  | Help          |
+  | Reports       |
+  | Users         |
+  | Login         |
+  | Profile View  |
+
 # Verify content contains expected text (data table)
 And the Help Guide content should contain the following text:
   | text                                                         |
-  | Platform Portal is the central administrative hub            |
-  | Login and Access                                             |
-  | Password Requirements                                        |
-
-# Expand Help Guide to new tab (click the launch/expand icon)
-When user clicks on the expand icon to open Help Guide in new tab
+  | Single Sign-On (SSO)                                         |
+  | Non-SSO Login                                                |
+  | Forgotten Password                                           |
+  | At least 8 characters                                        |
 
 # Close the Help Guide panel
 When user clicks the CLOSE button on the Help Guide panel
@@ -672,19 +989,125 @@ When user closes the Help Guide panel
 # Verify panel is closed
 Then the Help Guide panel should be closed
 
-# Verify all sidebar links open correctly with expected content
+# Verify iframe source domain
+And the Help Guide iframe should load from "assets.facctum.com"
+
+# Debug step - view Help Guide content
+Then user should see the Help Guide content
+
+# Open Help Guide in new tab (via expand icon)
+When user clicks on the expand icon to open Help Guide in new tab
+
+# Click sidebar link and verify page content
+When user clicks on sidebar link "Groups"
+Then the page title should be "Groups - Facctum Platform Guide"
+And the page content should contain "Groups enable administrators to bundle roles"
+
+# Section-specific sidebar link verification steps (recommended for better error reporting)
+# Each step includes the section name in logs and error messages for easier debugging
+
+# Verify Platform section sidebar links
+Then user should verify Platform section sidebar links:
+  | linkText      | expectedTitle                      | expectedContent                                           |
+  | Groups        | Groups - Facctum Platform Guide    | Groups enable administrators to bundle roles              |
+  | Roles         | Roles - Facctum Platform Guide     | Roles module enables administrators to define custom roles|
+  | Help          | Help - Facctum Platform Guide      | Help empowers users to quickly seek assistance            |
+  | Users         | Users - Facctum Platform Guide     | Users can be added or removed by administrators           |
+  | Login         | Login - Facctum Platform Guide     | Login process in the Facctum Platform supports            |
+  | Notifications | Notifications - Facctum Platform Guide | Notifications in the platform keep users up to date    |
+  | Profile View  | Profile View - Facctum Platform Guide | Profile View provide users with quick access           |
+
+# Verify FacctList section sidebar links
+Then user should verify FacctList section sidebar links:
+  | linkText              | expectedTitle                                 | expectedContent                                                    |
+  | Dashboard             | Dashboard - Facctum Platform Guide            | provides an at-a-glance overview of your FacctList environment     |
+  | Tasks                 | Tasks - Facctum Platform Guide                | Tasks provides users with access to a range of items               |
+  | Search                | Search - Facctum Platform Guide               | Search                                                             |
+  | Watchlists            | Watchlists - Facctum Platform Guide           | Watchlists are collections of records used to support screening    |
+  | Data Export           | Data Export - Facctum Platform Guide          | Data Export centralises the configuration                          |
+
+# Verify Watchlists submenu sidebar links
+Then user should verify Watchlists submenu sidebar links:
+  | linkText              | expectedTitle                                       | expectedContent                                                              |
+  | Commercial Lists      | Commercial Lists - Facctum Platform Guide           | Commercial Lists are watchlists provided by third-party vendor               |
+  | Regulatory Lists      | Regulatory Lists - Facctum Platform Guide           | Regulatory Lists are publicly available watchlists published                 |
+  | Internal Lists        | Internal Lists - Facctum Platform Guide             | Internal Lists—also known as Blocklists                                      |
+  | Reconciliation        | Reconciliation - Facctum Platform Guide             | Reconciliation enables you to compare official regulatory watchlists         |
+  | Suppressed and Enriched | Suppressed and Enriched - Facctum Platform Guide  | Suppressed and Enriched lets you manage one-off record or alias overrides    |
+
+# Verify FacctView section sidebar links
+Then user should verify FacctView section sidebar links:
+  | linkText              | expectedTitle                                      | expectedContent                                                              |
+  | Case Register         | Case Register - Facctum Platform Guide             | Case Register provides users with view of all compliance cases               |
+  | Screening Register    | Screening Register - Facctum Platform Guide        | Screening Register records and tracks all screening activities               |
+  | Entity Register       | Entity Register - Facctum Platform Guide           | Entity Register stores all entity information in the system                  |
+  | Customer Screening    | Customer Screening - Facctum Platform Guide        | Customer Screening helps institutions identify high-risk individuals         |
+  | Transaction Screening | Transaction Screening - Facctum Platform Guide     | Transaction Screening enables real-time screening of financial transactions  |
+  | Queues                | Queues - Facctum Platform Guide                    | Queues enable skill-based routing of compliance cases                        |
+
+# Verify Customer Screening submenu sidebar links
+Then user should verify Customer Screening submenu sidebar links:
+  | linkText                       | expectedTitle                                            | expectedContent                                                                        |
+  | CS Dashboard                   | Dashboard - Facctum Platform Guide                       | Customer Screening Dashboard provides a real-time overview of system performance       |
+  | On Demand Screening            | On Demand Screening - Facctum Platform Guide             | On-Demand Screening allows users to instantly screen individual customers              |
+  | Batch Screening                | Batch Screening - Facctum Platform Guide                 | Batch Screening enables users to screen large volumes of customer                      |
+  | CS Post-Screening Rules        | Post-Screening Rules - Facctum Platform Guide            | Post-Screening Rules enable organizations to define configurable validation            |
+  | CS Screening Profile           | Screening Profile - Facctum Platform Guide               | Screening Profile defines the rules, thresholds, and watchlists                        |
+
+# Verify Transaction Screening submenu sidebar links
+Then user should verify Transaction Screening submenu sidebar links:
+  | linkText                       | expectedTitle                                            | expectedContent                                                                        |
+  | TS Dashboard                   | Dashboard - Facctum Platform Guide                       | Transaction Screening Dashboard provides a real-time overview of transaction screening |
+  | Transaction Simulator          | Transaction Simulator - Facctum Platform Guide           | Transaction Simulator allows users to submit test transactions in JSON format          |
+  | Pre-Screening Rules            | Pre-Screening Rules - Facctum Platform Guide             | Pre-Screening Rules enable organizations to define configurable validation             |
+  | TS Post-Screening Rules        | Post-Screening Rules - Facctum Platform Guide            | Post-Screening Rules enable organizations to define configurable validation            |
+  | TS Screening Profile           | Screening Profile - Facctum Platform Guide               | Screening Profile defines the rules, thresholds, and watchlists                        |
+
+# Legacy step (backward compatible) - use section-specific steps above for better error reporting
 Then user should verify all sidebar links open correctly with expected content:
-  | linkText          | expectedTexts                                    |
-  | Platform Portal   | Platform Portal,user management,Login and Access |
-  | Tasks             | Tasks,workflow,permissions                       |
-  | List Management   | List Management,Commercial Lists                 |
+  | linkText      | expectedTitle                      | expectedContent                                           |
+  | Groups        | Groups - Facctum Platform Guide    | Groups enable administrators to bundle roles              |
 ```
 
 Key details:
+- Feature file: `src/features/helpGuide.feature` with scenarios for:
+  - Complete Help Guide verification (@HelpGuideComplete) - consolidated scenario that verifies:
+    - Panel display and title
+    - Iframe source from assets.facctum.com
+    - Content sections (Platform, Login and Access, Password Requirements, Home, Section Map)
+    - Section Map navigation items (Groups, Roles, Help, Reports, Users, Login, Profile View)
+    - Login and Access section text content
+    - Platform section sidebar links via expand to new tab (Groups, Roles, Help, Reports, Users, Login, Notifications, Profile View)
+    - FacctList section sidebar links (Dashboard, Tasks, Search, Watchlists, Data Export)
+    - FacctList > Watchlists submenu links (Commercial Lists, Regulatory Lists, Internal Lists, Reconciliation, Suppressed and Enriched)
+    - FacctView section sidebar links (Case Register, Screening Register, Entity Register, Customer Screening, Transaction Screening, Queues)
+    - FacctView > Customer Screening submenu links (CS Dashboard, On Demand Screening, Batch Screening, CS Post-Screening Rules, CS Screening Profile)
+    - FacctView > Transaction Screening submenu links (TS Dashboard, Transaction Simulator, Pre-Screening Rules, TS Post-Screening Rules, TS Screening Profile)
+  - Panel close functionality (@HelpGuideClose)
+- Background step verifies user is logged in via hooks
 - Content verification fetches iframe content and checks for expected text strings
-- Expand icon step stores the new page in `scenarioContext.get("helpGuidePage")`
-- Uses JavaScript evaluation to click sidebar links (handles hidden/collapsed links reliably)
-- Page content is verified directly from the rendered page
+- Uses `FacctumDashboardPage` page object for Help Guide interactions
 - Text matching is case-sensitive for content verification
-- Help Guide page is only closed if it was opened in a new tab (preserves main page)
-- Results are attached to Allure report as JSON
+- Results are attached to Allure report as JSON (includes section name for section-specific steps)
+- Tags: `@HelpGuide @org:facctum`
+- **Section-specific sidebar link steps** (recommended for better error reporting):
+  - `user should verify Platform section sidebar links:` - Platform section links
+  - `user should verify FacctList section sidebar links:` - FacctList section links
+  - `user should verify Watchlists submenu sidebar links:` - Watchlists submenu links
+  - `user should verify FacctView section sidebar links:` - FacctView section links
+  - `user should verify Customer Screening submenu sidebar links:` - Customer Screening submenu links
+  - `user should verify Transaction Screening submenu sidebar links:` - Transaction Screening submenu links
+  - Each step includes the section name in log messages (e.g., `[Platform] ✓ Link "Groups" verified successfully`)
+  - Error messages include section context for easier debugging (e.g., `[FacctView] 2 link(s) failed verification: ...`)
+- Legacy step `user should verify all sidebar links open correctly with expected content:` still available for backward compatibility
+- **Prefixed link names for duplicate links** (use these when the same link name appears in multiple sections):
+  - `Platform Reports` - Reports link in Platform section
+  - `FacctList Reports` - Reports link in FacctList section
+  - `FacctView Reports` - Reports link in FacctView section
+  - `FacctView Watchlists` - Watchlists link in FacctView section (distinct from FacctList Watchlists)
+- Platform section links: Groups, Roles, Help, Users, Login, Notifications, Profile View, Platform Reports
+- FacctList section links: Dashboard, Tasks, Search, Watchlists, Data Export, FacctList Reports
+- FacctList > Watchlists submenu links: Commercial Lists, Regulatory Lists, Internal Lists, Reconciliation, Suppressed and Enriched
+- FacctView section links: Case Register, Screening Register, Entity Register, Customer Screening, Transaction Screening, Queues, FacctView Reports, FacctView Watchlists
+- FacctView > Customer Screening submenu links: CS Dashboard, On Demand Screening, Batch Screening, CS Post-Screening Rules, CS Screening Profile
+- FacctView > Transaction Screening submenu links: TS Dashboard, Transaction Simulator, Pre-Screening Rules, TS Post-Screening Rules, TS Screening Profile
