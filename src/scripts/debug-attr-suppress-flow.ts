@@ -407,9 +407,64 @@ async function suppressAttribute(p: Page, sectionIndex: number = 0) {
       await page.locator('#hold-enrich-modal-release-btn').waitFor({ state: "visible", timeout: 10000 });
       await page.locator('#hold-enrich-modal-release-btn').click();
       console.log("  Clicked RELEASE in popup");
+      await page.waitForTimeout(2000);
 
-      // Wait for popup to close
+      // "Release attribute" confirmation popup appears on top
+      // It has: Comments textarea, UPLOAD FILE, CANCEL, SUBMIT
+      // Use the topmost/last visible modal to scope selectors
+      const releaseConfirmPopup = page.locator('[role="presentation"].facct-modal').last();
+
+      // Fill comment (mandatory)
+      const releaseComment = releaseConfirmPopup.locator('textarea').first();
+      await releaseComment.waitFor({ state: "visible", timeout: 10000 });
+      await releaseComment.fill("Release attribute via automation");
+      console.log("  Release comment filled");
+
+      // Upload file
+      const releaseFileInput = releaseConfirmPopup.locator('input[type="file"]').first();
+      if (await releaseFileInput.count() > 0) {
+        await releaseFileInput.setInputFiles("src/resources/testData/Test_Sheet.xlsx").catch(() => {});
+        await page.waitForTimeout(1000);
+        console.log("  Release file uploaded");
+      }
+
+      // Click SUBMIT in the release confirmation popup (NOT the background suppress popup)
+      // The release confirmation has its own SUBMIT — use the last visible one
+      const releaseSubmitBtn = releaseConfirmPopup.locator('button:has-text("SUBMIT")').first();
+      await releaseSubmitBtn.waitFor({ state: "visible", timeout: 5000 });
+      await releaseSubmitBtn.click();
+      console.log("  Clicked SUBMIT in release confirmation");
       await page.waitForTimeout(3000);
+
+      // After release confirmation, the "Edit attribute release request" popup shows
+      // The tag field needs to be properly initialized before SUBMIT
+      const editReleaseSubmit = page.locator('#hold-enrich-modal-suppress-btn');
+      if (await editReleaseSubmit.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await page.waitForTimeout(3000);
+
+        // The popup has pre-filled tags but the tagList state may not be initialized
+        // Click the tags dropdown to trigger initialization, then close it
+        const popup = page.locator('[role="presentation"].facct-modal').last();
+        const tagsField = popup.locator('#mui-component-select-tags, [name="tags"]').first();
+        if (await tagsField.isVisible({ timeout: 3000 }).catch(() => false)) {
+          await tagsField.click();
+          await page.waitForTimeout(1000);
+          // Close dropdown without changing selection
+          await page.keyboard.press("Escape");
+          await page.waitForTimeout(500);
+          console.log("  Initialized tag field");
+        }
+
+        await page.waitForFunction(() => {
+          const btn = document.querySelector('#hold-enrich-modal-suppress-btn') as HTMLButtonElement;
+          return btn && !btn.disabled;
+        }, { timeout: 10000 }).catch(() => {});
+        await editReleaseSubmit.click();
+        console.log("  Clicked SUBMIT in edit release request");
+        await page.waitForTimeout(3000);
+      }
+
+      // Wait for all popups to close, force-remove any remaining backdrop
       await page.evaluate(() => {
         const backdrops = document.querySelectorAll('.MuiBackdrop-root.MuiModal-backdrop');
         backdrops.forEach(b => { const m = b.closest('[role="presentation"]'); if (m && m.classList.contains('facct-modal')) m.remove(); });
