@@ -399,6 +399,680 @@ export class ProfileViewPage {
     return allFound;
   }
 
+  // ==================== Tabs ====================
+
+  // Profile view tabs (confirmed from CSV: #simple-tab-1 for AUDIT, #simple-tab-0 for RECORD DETAILS)
+  private auditTab!: Locator;
+  private recordDetailsTab!: Locator;
+
+  // Attachment locators — RECORD DETAILS section
+  // Confirmed: .attachment-field contains the clickable filename
+  private attachmentField!: Locator;
+  private attachmentFieldSpan!: Locator;
+
+  // Attachment locators — AUDIT section
+  // Confirmed: .download-audit-link is the clickable filename in audit trail
+  private auditDownloadLink!: Locator;
+
+  // Attribute suppress/enrich icons (visible beside attribute rows in record list or edit mode)
+  // Confirmed: orange hand SVG path for suppress, button[aria-label='Attribute enriched'] for enrich
+  private orangeHandIcon!: Locator;
+  private blueHandIcon!: Locator;
+  private enrichedIcon!: Locator;
+  private enrichIcon!: Locator;
+
+  // Additional attribute icons (EditNoteIcon SVGs in table/drawer)
+  private attrSuppressedSvg!: Locator;
+  private attrEnrichedSvg!: Locator;
+
+  // Attribute suppress/enrich popup attachment
+  // Confirmed: div[class*='attachment'] span inside the popup modal
+  private popupAttachmentSpan!: Locator;
+
+  // Cancel button in popup
+  private popupCancelBtn!: Locator;
+
+  // REQUEST FOR REVIEW tab (default tab when opening from Tasks Pending L1)
+  private requestForReviewTab!: Locator;
+
+  // Enrichment/suppress details table rows — each row may have an attachment icon
+  private enrichmentDetailRows!: Locator;
+  // Attachment icon within enrichment rows (envelope/file icon)
+  private rowAttachmentIcons!: Locator;
+
+  private initAttachmentLocators(): void {
+    const drawer = this.page.locator('.facct-drawer-paper').first();
+
+    // Tabs — the profile view from Tasks opens on REQUEST FOR REVIEW by default
+    this.requestForReviewTab = drawer.locator('button:has-text("REQUEST FOR REVIEW")').first();
+    this.auditTab = drawer.locator('button:has-text("AUDIT")').first();
+    this.recordDetailsTab = drawer.locator('button:has-text("RECORD DETAILS")').first();
+
+    // Attachment in RECORD DETAILS — confirmed CSS: .attachment-field
+    this.attachmentField = drawer.locator('.attachment-field');
+    this.attachmentFieldSpan = drawer.locator('.attachment-field span');
+
+    // Attachment in AUDIT — confirmed CSS: .download-audit-link
+    this.auditDownloadLink = drawer.locator('.download-audit-link, span.download-audit-link');
+
+    // Attribute icons (in edit mode / commercial list profile view)
+    this.orangeHandIcon = drawer.locator('button[title="Attribute suppress"]');
+    this.blueHandIcon = drawer.locator('button[title="Attribute suppress request"]');
+    this.enrichedIcon = drawer.locator('button[aria-label="Attribute enriched"]');
+    this.enrichIcon = drawer.locator('svg[data-testid="AddCircleOutlineIcon"]');
+
+    // EditNoteIcon SVGs in table rows (Review/Tasks views)
+    this.attrSuppressedSvg = drawer.locator(
+      'svg[data-testid="EditNoteIcon"][title="Attribute suppressed"], ' +
+      'svg[title="Attribute suppressed"], ' +
+      'svg.MuiSvgIcon-root[title="Attribute suppressed"]'
+    );
+    this.attrEnrichedSvg = drawer.locator(
+      'svg[data-testid="EditNoteIcon"][title="Attribute enriched"], ' +
+      'svg[title="Attribute enriched"], ' +
+      'svg.MuiSvgIcon-root[title="Attribute enriched"]'
+    );
+
+    // Enrichment/suppress details table in REQUEST FOR REVIEW tab
+    // Each row in the table may have an attachment (envelope) icon
+    this.enrichmentDetailRows = drawer.locator('table tbody tr, .compare-section-slot table tbody tr');
+
+    // Attachment icons within enrichment rows — document/file icons on the right side of each row
+    // From screenshot: these are FileCopy/ContentCopy/Description icons (page with folded corner)
+    this.rowAttachmentIcons = drawer.locator(
+      'svg[data-testid="ContentCopyIcon"], ' +
+      'svg[data-testid="FileCopyIcon"], ' +
+      'svg[data-testid="FileCopyOutlinedIcon"], ' +
+      'svg[data-testid="ContentCopyOutlinedIcon"], ' +
+      'svg[data-testid="DescriptionIcon"], ' +
+      'svg[data-testid="DescriptionOutlinedIcon"], ' +
+      'svg[data-testid="InsertDriveFileIcon"], ' +
+      'svg[data-testid="InsertDriveFileOutlinedIcon"], ' +
+      'svg[data-testid="ArticleIcon"], ' +
+      'svg[data-testid="ArticleOutlinedIcon"], ' +
+      'svg[data-testid="NoteIcon"], ' +
+      'svg[data-testid="AttachFileIcon"], ' +
+      'svg[data-testid="AttachmentIcon"], ' +
+      'svg[data-testid="MailIcon"], ' +
+      'svg[data-testid="EmailIcon"], ' +
+      'svg[data-testid="FileDownloadIcon"], ' +
+      '[class*="attachment-icon"], ' +
+      'button[aria-label*="attachment"], ' +
+      'button[title*="attachment"], ' +
+      'button[title*="Attachment"], ' +
+      'button[title*="download"], ' +
+      'button[title*="Download"]'
+    );
+
+    // Popup attachment — confirmed: div[class*='attachment'] span inside .facct-modal
+    const popup = this.page.locator('[role="presentation"].facct-modal').last();
+    this.popupAttachmentSpan = popup.locator('div.attachment-field span, div[class*="attachment"] span');
+
+    // Cancel button in popup
+    this.popupCancelBtn = popup.locator('#hold-enrich-modal-cancel-btn, button:has-text("CANCEL")');
+  }
+
+  // ==================== Attachment Download ====================
+
+  /**
+   * Captures any visible toaster/alert/snackbar messages.
+   * Call after any action to log what the UI reported.
+   */
+  async captureToaster(label: string): Promise<string[]> {
+    const messages: string[] = [];
+    try {
+      const selectors = [
+        '[role="alert"]',
+        '.MuiSnackbar-root',
+        '[class*="notistack"]',
+        '.MuiAlert-message',
+      ];
+      for (const sel of selectors) {
+        const els = this.page.locator(sel);
+        const count = await els.count();
+        for (let i = 0; i < count; i++) {
+          const vis = await els.nth(i).isVisible().catch(() => false);
+          if (vis) {
+            const text = (await els.nth(i).textContent().catch(() => "") || "").trim();
+            if (text && !messages.includes(text)) {
+              messages.push(text.substring(0, 150));
+            }
+          }
+        }
+      }
+      if (messages.length > 0) {
+        logger.info(`Toaster(${label}): ${JSON.stringify(messages)}`);
+      }
+    } catch { /* ignore */ }
+    return messages;
+  }
+
+  /**
+   * Clicks the AUDIT tab in the profile view.
+   */
+  async clickAuditTab(): Promise<void> {
+    this.initAttachmentLocators();
+    await this.auditTab.waitFor({ state: "visible", timeout: 5000 });
+    await this.auditTab.click();
+    await this.page.waitForLoadState("networkidle");
+    await this.page.waitForTimeout(2000);
+    logger.info("Clicked AUDIT tab");
+    await this.captureToaster("after AUDIT tab click");
+  }
+
+  /**
+   * Clicks the RECORD DETAILS tab in the profile view.
+   */
+  async clickRecordDetailsTab(): Promise<void> {
+    this.initAttachmentLocators();
+    if (await this.recordDetailsTab.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await this.recordDetailsTab.click();
+      await this.page.waitForTimeout(1000);
+      logger.info("Clicked RECORD DETAILS tab");
+    }
+  }
+
+  /**
+   * Downloads an attachment from the RECORD DETAILS section.
+   * Confirmed selector: .attachment-field (click the div or span inside it)
+   * @returns Download result with filename and size, or null if not found.
+   */
+  async downloadAttachmentFromRecordDetails(): Promise<{ filename: string; size: number; displayedName: string; filenameMatch: boolean } | null> {
+    this.initAttachmentLocators();
+    const result = await this.tryDownload([
+      this.attachmentFieldSpan,
+      this.attachmentField,
+    ], "RECORD DETAILS");
+    await this.captureToaster("after RECORD DETAILS download");
+    return result;
+  }
+
+  /**
+   * Downloads an attachment from the AUDIT tab.
+   * Confirmed selector: .download-audit-link (span with filename)
+   * Caller should click AUDIT tab first via clickAuditTab().
+   * @returns Download result with filename and size, or null if not found.
+   */
+  async downloadAttachmentFromAudit(): Promise<{ filename: string; size: number; displayedName: string; filenameMatch: boolean } | null> {
+    this.initAttachmentLocators();
+    const result = await this.tryDownload([
+      this.auditDownloadLink,
+    ], "AUDIT");
+    await this.captureToaster("after AUDIT download");
+    return result;
+  }
+
+  /**
+   * Opens the suppressed/enriched attribute popup by clicking the appropriate icon.
+   * Must be in edit mode first (call clickEdit()).
+   * Scrolls to "Other names" section before looking for icons.
+   * @returns true if a popup was opened, false if no icon found.
+   */
+  /**
+   * Opens the suppressed/enriched attribute popup by clicking the appropriate icon.
+   * Navigates pagination in the "Other names" section to find rows with icons.
+   * @returns true if a popup was opened, false if no icon found.
+   */
+  async openSuppressedAttributePopup(): Promise<boolean> {
+    this.initAttachmentLocators();
+    const drawer = this.page.locator('.facct-drawer-paper').first();
+
+    // Scroll to Other names section
+    const otherNames = drawer.locator('text=Other names').first();
+    if (await otherNames.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await otherNames.scrollIntoViewIfNeeded();
+      await this.page.waitForTimeout(1000);
+    } else {
+      logger.warn("'Other names' section not found in drawer");
+      return false;
+    }
+
+    // The Other names table may be paginated — navigate through all pages
+    // to find a row with a suppress/enrich icon
+    const otherNamesSection = drawer.locator('.compare-sync-lsegv2-other-names, div:has(> text=Other names)').first();
+    let maxPages = 10;
+
+    while (maxPages > 0) {
+      // Try all icon types on the current page
+      if (await this.tryClickAttributeIcon(drawer)) return true;
+
+      // Try navigating to next page within the Other names section
+      // Pagination is inside the section: ">" button or next-page arrow
+      const sectionPagBtns = drawer.locator('.compare-sync-lsegv2-other-names button[class*="pagination"], .compare-section-slot button[class*="pagination"]');
+      const sectionPagCount = await sectionPagBtns.count();
+
+      if (sectionPagCount >= 4) {
+        // nth(2) = next page (single arrow right)
+        const nextBtn = sectionPagBtns.nth(2);
+        const tabIndex = await nextBtn.getAttribute("tabindex").catch(() => "-1");
+        if (tabIndex !== "-1") {
+          await nextBtn.click();
+          await this.page.waitForTimeout(1500);
+          logger.info("Navigated to next page in Other names section");
+          maxPages--;
+          continue;
+        }
+      }
+
+      // Also try generic next-page buttons near Other names
+      const genericNext = drawer.locator('div:has(> div:has-text("Other names")) button:has(svg[data-testid="NavigateNextIcon"]), div:has(> div:has-text("Other names")) button:has(svg[data-testid="ChevronRightIcon"])').first();
+      if (await genericNext.isVisible({ timeout: 1000 }).catch(() => false)) {
+        const disabled = await genericNext.isDisabled().catch(() => true);
+        if (!disabled) {
+          await genericNext.click();
+          await this.page.waitForTimeout(1500);
+          logger.info("Navigated to next page via generic next button");
+          maxPages--;
+          continue;
+        }
+      }
+
+      // No more pages
+      break;
+    }
+
+    logger.warn("No suppressed/enriched attribute icons found after checking all pages");
+    return false;
+  }
+
+  /**
+   * Tries to click any attribute suppress/enrich icon on the current page.
+   * Returns true if an icon was clicked and a popup opened.
+   */
+  private async tryClickAttributeIcon(drawer: Locator): Promise<boolean> {
+    // Order: orange hand → blue hand → enriched button → enrich AddCircle → EditNote SVGs
+    const iconSets = [
+      { loc: this.orangeHandIcon, name: "orange hand (Attribute suppress)" },
+      { loc: this.blueHandIcon, name: "blue hand (Attribute suppress request)" },
+      { loc: this.enrichedIcon, name: "enriched button (Attribute enriched)" },
+      { loc: this.enrichIcon, name: "enrich AddCircle" },
+      { loc: this.attrSuppressedSvg, name: "EditNote (Attribute suppressed)" },
+      { loc: this.attrEnrichedSvg, name: "EditNote (Attribute enriched)" },
+    ];
+
+    for (const { loc, name } of iconSets) {
+      const count = await loc.count();
+      if (count === 0) continue;
+
+      for (let i = 0; i < count; i++) {
+        const icon = loc.nth(i);
+        if (!(await icon.isVisible().catch(() => false))) continue;
+
+        await icon.scrollIntoViewIfNeeded();
+        await icon.click({ force: true });
+        logger.info(`Clicked ${name} (index ${i})`);
+        await this.page.waitForTimeout(2000);
+
+        // Check if popup opened ("View add attribute request" or similar)
+        const popup = this.page.locator('[role="presentation"].facct-modal, [role="dialog"], .MuiDialog-root').last();
+        if (await popup.isVisible({ timeout: 3000 }).catch(() => false)) {
+          const title = await popup.locator('h2, h3, .MuiDialogTitle-root, div:has-text("View")').first().textContent().catch(() => "");
+          logger.info(`Popup opened: "${title?.trim().substring(0, 60)}"`);
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Downloads an attachment from the attribute suppress/enrich popup.
+   * The popup has an "Attachment" section at the bottom with a clickable filename.
+   * Confirmed from screenshot: filename text like "PR-List-20-Jul-2025-10_00_12.xlsx"
+   * Caller should open the popup first via openSuppressedAttributePopup().
+   * @returns Download result with filename and size, or null if not found.
+   */
+  async downloadAttachmentFromPopup(): Promise<{ filename: string; size: number; displayedName: string; filenameMatch: boolean } | null> {
+    this.initAttachmentLocators();
+    const popup = this.page.locator('[role="presentation"].facct-modal, [role="dialog"], .MuiDialog-root').last();
+
+    // Scroll to "Attachment" section inside the popup
+    const attachmentLabel = popup.locator('text=Attachment').first();
+    if (await attachmentLabel.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await attachmentLabel.scrollIntoViewIfNeeded();
+      await this.page.waitForTimeout(500);
+      logger.info("Scrolled to Attachment section in popup");
+    }
+
+    // Try multiple selectors for the attachment filename in the popup
+    const popupAttachmentLocators = [
+      // div.attachment-field span (confirmed from CSV)
+      popup.locator('div.attachment-field span, div[class*="attachment"] span'),
+      // Any span near the "Attachment" label that looks like a filename
+      popup.locator('span:has-text(".xlsx"), span:has-text(".pdf"), span:has-text(".csv"), span:has-text(".msg"), span:has-text(".doc")'),
+      // Clickable link inside attachment area
+      popup.locator('[class*="attachment"] a, [class*="download"] a'),
+    ];
+
+    const result = await this.tryDownload(popupAttachmentLocators.map(l => l), "attribute popup");
+    await this.captureToaster("after popup download");
+    return result;
+  }
+
+  /**
+   * Closes the attribute suppress/enrich popup via CANCEL button.
+   */
+  async closeAttributePopup(): Promise<void> {
+    this.initAttachmentLocators();
+    if (await this.popupCancelBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await this.popupCancelBtn.click();
+      await this.page.waitForTimeout(1000);
+      logger.info("Closed attribute popup via CANCEL");
+    } else {
+      await this.page.keyboard.press("Escape");
+      await this.page.waitForTimeout(1000);
+      logger.info("Closed attribute popup via Escape");
+    }
+  }
+
+  /**
+   * Returns the count of visible attribute suppress/enrich icons in the drawer.
+   */
+  async getAttributeIconCount(): Promise<{ orange: number; blue: number; enriched: number; enrich: number; suppressedSvg: number; enrichedSvg: number }> {
+    this.initAttachmentLocators();
+    return {
+      orange: await this.orangeHandIcon.count(),
+      blue: await this.blueHandIcon.count(),
+      enriched: await this.enrichedIcon.count(),
+      enrich: await this.enrichIcon.count(),
+      suppressedSvg: await this.attrSuppressedSvg.count(),
+      enrichedSvg: await this.attrEnrichedSvg.count(),
+    };
+  }
+
+  /**
+   * Checks if an attachment is visible in the RECORD DETAILS view.
+   * Confirmed selector: .attachment-field
+   */
+  async isAttachmentVisible(): Promise<boolean> {
+    this.initAttachmentLocators();
+    if (await this.attachmentField.first().isVisible({ timeout: 2000 }).catch(() => false)) {
+      return true;
+    }
+    if (await this.attachmentFieldSpan.first().isVisible({ timeout: 1000 }).catch(() => false)) {
+      return true;
+    }
+    // Also check for row attachment icons in enrichment details
+    if (await this.rowAttachmentIcons.first().isVisible({ timeout: 1000 }).catch(() => false)) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Scans the enrichment/suppress details table for rows with attachment icons.
+   * Clicks each attachment icon and attempts download.
+   * Returns array of download results.
+   */
+  async downloadAllAttachmentsFromDetails(): Promise<{ filename: string; size: number; displayedName: string; filenameMatch: boolean }[]> {
+    this.initAttachmentLocators();
+    const downloads: { filename: string; size: number; displayedName: string; filenameMatch: boolean }[] = [];
+
+    // First try .attachment-field (record suppress view)
+    const fieldResult = await this.tryDownload([this.attachmentFieldSpan, this.attachmentField], "attachment-field");
+    if (fieldResult) downloads.push(fieldResult);
+
+    // Then try row attachment icons (enrichment details view)
+    const iconCount = await this.rowAttachmentIcons.count();
+    logger.info(`Row attachment icons found: ${iconCount}`);
+
+    for (let i = 0; i < iconCount; i++) {
+      const icon = this.rowAttachmentIcons.nth(i);
+      if (!(await icon.isVisible().catch(() => false))) continue;
+
+      const text = await icon.evaluate(el => {
+        const row = el.closest('tr');
+        return row ? row.textContent?.trim().substring(0, 80) : el.textContent?.trim().substring(0, 40);
+      }).catch(() => "");
+      logger.info(`Clicking row attachment icon ${i}: row="${text}"`);
+
+      try {
+        await icon.scrollIntoViewIfNeeded();
+        const [download] = await Promise.all([
+          this.page.waitForEvent("download", { timeout: 10000 }),
+          icon.click(),
+        ]);
+        const filename = download.suggestedFilename();
+        const tmpPath = await download.path();
+        const size = tmpPath ? (await import("fs")).statSync(tmpPath).size : 0;
+        logger.info(`Downloaded from row icon ${i}: ${filename} (${size} bytes)`);
+        downloads.push({ filename, size });
+        await this.captureToaster(`row-icon-${i}`);
+      } catch {
+        logger.warn(`Row icon ${i} didn't trigger download — may open popup instead`);
+        await this.captureToaster(`row-icon-${i}-fail`);
+
+        // Check if a popup opened (the icon might open the attribute details popup)
+        const popup = this.page.locator('[role="presentation"].facct-modal').last();
+        if (await popup.isVisible({ timeout: 2000 }).catch(() => false)) {
+          logger.info(`Popup opened from row icon ${i} — trying popup attachment download`);
+          const popupResult = await this.downloadAttachmentFromPopup();
+          if (popupResult) downloads.push(popupResult);
+          await this.closeAttributePopup();
+        }
+      }
+    }
+
+    // Also scan for any other downloadable links/spans in the drawer
+    const drawer = this.page.locator('.facct-drawer-paper').first();
+    const allDownloadableSelectors = [
+      '.download-audit-link',
+      'a[download]',
+      'a[href*="blob"]',
+      '[class*="attachment"] span',
+      '[class*="download"] span',
+    ];
+    for (const sel of allDownloadableSelectors) {
+      const els = drawer.locator(sel);
+      const count = await els.count();
+      for (let i = 0; i < count; i++) {
+        const el = els.nth(i);
+        if (!(await el.isVisible().catch(() => false))) continue;
+        const elText = await el.textContent().catch(() => "");
+        // Skip if we already downloaded this file
+        if (downloads.some(d => elText?.includes(d.filename))) continue;
+
+        logger.info(`Trying additional download: "${elText?.trim().substring(0, 60)}" (${sel})`);
+        try {
+          const [download] = await Promise.all([
+            this.page.waitForEvent("download", { timeout: 8000 }),
+            el.click(),
+          ]);
+          const filename = download.suggestedFilename();
+          const tmpPath = await download.path();
+          const size = tmpPath ? (await import("fs")).statSync(tmpPath).size : 0;
+          logger.info(`Downloaded: ${filename} (${size} bytes)`);
+          downloads.push({ filename, size });
+          await this.captureToaster(`additional-${sel}`);
+        } catch {
+          continue;
+        }
+      }
+    }
+
+    logger.info(`Total attachments downloaded from details: ${downloads.length}`);
+    return downloads;
+  }
+
+  /**
+   * Scans the entire drawer and logs all potentially clickable/downloadable elements.
+   * For diagnostics — call this to understand what's available.
+   */
+  async scanAllDownloadableElements(): Promise<void> {
+    this.initAttachmentLocators();
+    const drawer = this.page.locator('.facct-drawer-paper').first();
+
+    const elements = await drawer.evaluate(d => {
+      const found: any[] = [];
+      // All SVGs with data-testid
+      d.querySelectorAll('svg[data-testid]').forEach(svg => {
+        found.push({
+          type: 'svg', testId: svg.getAttribute('data-testid'),
+          title: svg.getAttribute('title') || (svg.parentElement as HTMLElement)?.title || '',
+          parentTag: svg.parentElement?.tagName,
+          parentClass: svg.parentElement?.className?.toString().substring(0, 60) || '',
+          visible: (svg as unknown as HTMLElement).offsetParent !== null,
+        });
+      });
+      // All elements with attachment/download/file classes
+      d.querySelectorAll('[class*="attachment"], [class*="download"], [class*="file"]').forEach(el => {
+        found.push({
+          type: 'class-match', tag: el.tagName,
+          class: el.className?.toString().substring(0, 80),
+          text: el.textContent?.trim().substring(0, 60),
+          visible: (el as HTMLElement).offsetParent !== null,
+        });
+      });
+      // All clickable elements in the last column of table rows (the file icons)
+      d.querySelectorAll('table tbody tr td:last-child').forEach((td, i) => {
+        const svgs = td.querySelectorAll('svg');
+        const buttons = td.querySelectorAll('button');
+        const links = td.querySelectorAll('a');
+        if (svgs.length > 0 || buttons.length > 0 || links.length > 0) {
+          found.push({
+            type: 'last-col', rowIndex: i,
+            svgCount: svgs.length,
+            svgTestIds: Array.from(svgs).map(s => s.getAttribute('data-testid')).filter(Boolean),
+            buttonCount: buttons.length,
+            linkCount: links.length,
+            html: td.innerHTML.substring(0, 200),
+          });
+        }
+      });
+      return found;
+    }).catch(() => []);
+
+    logger.info(`Scannable elements in drawer: ${elements.length}`);
+    for (const el of elements) {
+      logger.info(`  ${JSON.stringify(el)}`);
+    }
+  }
+
+  /**
+   * Internal: tries each locator in order to trigger a download event.
+   * If download event doesn't fire, captures toaster/error/new-tab info for debugging.
+   */
+  private async tryDownload(
+    locators: Locator[],
+    context: string
+  ): Promise<{ filename: string; size: number; displayedName: string; filenameMatch: boolean } | null> {
+    for (const locator of locators) {
+      const count = await locator.count();
+      if (count === 0) continue;
+
+      for (let i = 0; i < count; i++) {
+        const el = locator.nth(i);
+        if (!(await el.isVisible().catch(() => false))) continue;
+
+        // Capture the visible filename text BEFORE clicking
+        const displayedText = (await el.textContent().catch(() => "") || "").trim();
+        logger.info(`Trying download from ${context}: "${displayedText.substring(0, 60)}"`);
+
+        // Capture page count before click (to detect new tab)
+        const pagesBefore = this.page.context().pages().length;
+
+        try {
+          const [download] = await Promise.all([
+            this.page.waitForEvent("download", { timeout: 10000 }),
+            el.click(),
+          ]);
+          const filename = download.suggestedFilename();
+          const tmpPath = await download.path();
+          const size = tmpPath ? (await import("fs")).statSync(tmpPath).size : 0;
+          logger.info(`Downloaded from ${context}: ${filename} (${size} bytes)`);
+
+          // Verify filename matches what was displayed on the UI
+          const displayedClean = displayedText.replace(/^\s*📎\s*/, "").trim();
+          let filenameMatch = false;
+          if (displayedClean && filename) {
+            filenameMatch = filename === displayedClean ||
+              filename.includes(displayedClean) ||
+              displayedClean.includes(filename);
+            if (filenameMatch) {
+              logger.info(`✅ Filename match: displayed="${displayedClean}" downloaded="${filename}"`);
+            } else {
+              logger.warn(`❌ Filename MISMATCH: displayed="${displayedClean}" downloaded="${filename}"`);
+            }
+          } else {
+            // No displayed text to compare — skip match check
+            filenameMatch = true;
+            logger.info(`Filename: "${filename}" (no displayed text to compare)`);
+          }
+
+          return { filename, size, displayedName: displayedClean, filenameMatch };
+        } catch (dlErr) {
+          // Download event didn't fire — capture what happened instead
+          logger.warn(`Download event not triggered from ${context} (element ${i}): ${dlErr}`);
+
+          // Check for toaster / alert messages
+          try {
+            const alerts = await this.page.locator('[role="alert"], .MuiSnackbar-root, [class*="notistack"]').allTextContents();
+            if (alerts.length > 0) {
+              const alertTexts = alerts.map(a => a.trim().substring(0, 120)).filter(a => a);
+              logger.warn(`  Toaster/alerts after click: ${JSON.stringify(alertTexts)}`);
+            }
+          } catch { /* ignore */ }
+
+          // Check if a new tab/page opened (file might open in new tab instead of downloading)
+          const pagesAfter = this.page.context().pages().length;
+          if (pagesAfter > pagesBefore) {
+            const newPage = this.page.context().pages()[pagesAfter - 1];
+            const newUrl = newPage.url();
+            logger.warn(`  New tab opened after click: ${newUrl.substring(0, 150)}`);
+            // Try to get the content/filename from the new tab
+            try {
+              const title = await newPage.title().catch(() => "");
+              logger.warn(`  New tab title: "${title}"`);
+            } catch { /* ignore */ }
+            // Close the new tab
+            await newPage.close().catch(() => {});
+          }
+
+          // Check for error messages in the drawer
+          try {
+            const errorEls = await this.page.locator('.facct-drawer-paper .MuiAlert-message, .facct-drawer-paper [class*="error"]').allTextContents();
+            if (errorEls.length > 0) {
+              logger.warn(`  Error elements in drawer: ${JSON.stringify(errorEls.map(e => e.trim().substring(0, 100)))}`);
+            }
+          } catch { /* ignore */ }
+
+          // Log the element's HTML for debugging
+          try {
+            const outerHtml = await el.evaluate(e => e.outerHTML.substring(0, 300));
+            logger.warn(`  Element HTML: ${outerHtml}`);
+          } catch { /* ignore */ }
+
+          // Log the element's parent structure
+          try {
+            const parentInfo = await el.evaluate(e => {
+              const p = e.parentElement;
+              return {
+                parentTag: p?.tagName || "",
+                parentClass: p?.className?.toString().substring(0, 80) || "",
+                parentId: p?.id || "",
+                childCount: p?.children.length || 0,
+                siblings: Array.from(p?.children || []).map(c => ({
+                  tag: c.tagName,
+                  class: c.className?.toString().substring(0, 40) || "",
+                  text: c.textContent?.trim().substring(0, 40) || "",
+                })),
+              };
+            });
+            logger.warn(`  Parent: <${parentInfo.parentTag}> class="${parentInfo.parentClass}" id="${parentInfo.parentId}" children=${parentInfo.childCount}`);
+            for (const sib of parentInfo.siblings) {
+              logger.warn(`    <${sib.tag}> class="${sib.class}" text="${sib.text}"`);
+            }
+          } catch { /* ignore */ }
+
+          continue;
+        }
+      }
+    }
+    logger.warn(`No downloadable attachment found in ${context}`);
+    return null;
+  }
+
   // ==================== Validation ====================
 
   /**

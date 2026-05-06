@@ -1,0 +1,357 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<meta name="ProgId" content="Word.Document">
+<meta name="Generator" content="Microsoft Word 15">
+<title>Testing and Regression Evidence Document</title>
+<style>
+body { font-family: Calibri, sans-serif; font-size: 11pt; margin: 40px 60px; color: #333; }
+h1 { font-size: 22pt; color: #003FAF; border-bottom: 3px solid #003FAF; padding-bottom: 8px; }
+h2 { font-size: 16pt; color: #003FAF; margin-top: 30px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+h3 { font-size: 13pt; color: #1a1a1a; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 10px 0 20px 0; font-size: 10pt; }
+th { background-color: #003FAF; color: white; padding: 8px 10px; text-align: left; border: 1px solid #003FAF; }
+td { padding: 6px 10px; border: 1px solid #ddd; vertical-align: top; }
+tr:nth-child(even) { background-color: #f8f9fa; }
+.pass { color: #28a745; font-weight: bold; }
+.fail { color: #dc3545; font-weight: bold; }
+.skip { color: #6c757d; }
+.header-table { border: none; margin-bottom: 30px; }
+.header-table td { border: none; padding: 4px 20px 4px 0; }
+.header-table td:first-child { font-weight: bold; color: #003FAF; width: 160px; }
+.logo { text-align: center; margin-bottom: 20px; }
+.logo img { height: 60px; }
+.executive-box { background: #f0f4ff; border-left: 4px solid #003FAF; padding: 15px 20px; margin: 15px 0; }
+.section-divider { border: none; border-top: 2px solid #003FAF; margin: 40px 0; }
+.conclusion-box { background: #e8f5e9; border-left: 4px solid #28a745; padding: 15px 20px; margin: 15px 0; }
+.risk-box { background: #fff3e0; border-left: 4px solid #ff9800; padding: 15px 20px; margin: 15px 0; }
+@page { margin: 2cm; }
+</style>
+</head>
+<body>
+
+<!-- LOGO -->
+<div class="logo">
+<p style="font-size: 28pt; color: #003FAF; font-weight: bold; letter-spacing: 2px;">FACCTUM</p>
+<p style="font-size: 10pt; color: #666; margin-top: -10px;">Anti-Money Laundering Compliance Platform</p>
+</div>
+
+<h1>Testing and Regression Evidence Document</h1>
+
+<table class="header-table">
+<tr><td>Product</td><td>FacctList — LSEG World-Check Integration</td></tr>
+<tr><td>Release Version</td><td>v1.2.1</td></tr>
+<tr><td>Document Date</td><td>May 2026</td></tr>
+<tr><td>Prepared By</td><td>QA Team</td></tr>
+<tr><td>Classification</td><td>Internal — Client Deliverable</td></tr>
+<tr><td>Environment</td><td>QA (qa-saas.facctum.com)</td></tr>
+</table>
+
+<hr class="section-divider">
+
+<h2>1. Executive Summary</h2>
+
+<div class="executive-box">
+<p>This document provides formal evidence of testing performed for release v1.2.1 of the FacctList product. Testing covered <strong>new feature validation</strong>, <strong>regression testing</strong>, and <strong>concurrency/data integrity verification</strong> across the Suppress/Enrich workflow, Bulk Operations, API integrations, and Task Management modules.</p>
+<p><strong>Key Outcomes:</strong></p>
+<ul>
+<li>All <strong>40 test scenarios</strong> executed successfully</li>
+<li><strong>Zero defects</strong> found in regression scope</li>
+<li>New features (Attribute Suppress/Enrich, Auto-Closure, Attachment Download) validated end-to-end</li>
+<li>Concurrency handling verified across <strong>12 stale-tab scenarios</strong> with correct version conflict detection</li>
+<li><strong>100% pass rate</strong> — Release approved for promotion</li>
+</ul>
+</div>
+
+<h2>2. Test Scope &amp; Coverage Matrix</h2>
+
+<h3>2.1 Features Under Test</h3>
+
+<table>
+<tr><th>#</th><th>Module / Feature</th><th>Test Type</th><th>Priority</th><th>Scenarios</th><th>Pass</th><th>Fail</th></tr>
+<tr><td>1</td><td>Attribute Suppress &amp; Enrich (Full Screen)</td><td>New Feature</td><td>P1</td><td>4</td><td class="pass">4</td><td>0</td></tr>
+<tr><td>2</td><td>Auto Closure/Review on Source Update</td><td>New Feature</td><td>P1</td><td>4</td><td class="pass">4</td><td>0</td></tr>
+<tr><td>3</td><td>List Edit &amp; Maker-Checker Actions</td><td>New Feature</td><td>P1</td><td>6</td><td class="pass">6</td><td>0</td></tr>
+<tr><td>4</td><td>Template Run (Suppress/Enrich)</td><td>New Feature</td><td>P2</td><td>1</td><td class="pass">1</td><td>0</td></tr>
+<tr><td>5</td><td>Attachment Download (Profile/Audit/Popup)</td><td>New Feature</td><td>P2</td><td>5</td><td class="pass">5</td><td>0</td></tr>
+<tr><td>6</td><td>Record Suppress — Stale Tab Concurrency</td><td>Regression</td><td>P1</td><td>5</td><td class="pass">5</td><td>0</td></tr>
+<tr><td>7</td><td>Attribute Suppress — Stale Tab Concurrency</td><td>Regression</td><td>P1</td><td>7</td><td class="pass">7</td><td>0</td></tr>
+<tr><td>8</td><td>Bulk Delete (UI)</td><td>Regression</td><td>P2</td><td>1</td><td class="pass">1</td><td>0</td></tr>
+<tr><td>9</td><td>Bulk Upload (Concurrent Jobs)</td><td>Regression</td><td>P2</td><td>1</td><td class="pass">1</td><td>0</td></tr>
+<tr><td>10</td><td>External API Rate Limiting</td><td>Regression</td><td>P2</td><td>1</td><td class="pass">1</td><td>0</td></tr>
+<tr><td>11</td><td>Task Page — Closed Task Verification</td><td>Regression</td><td>P3</td><td>3</td><td class="pass">3</td><td>0</td></tr>
+<tr><td>12</td><td>Keyword Report Export</td><td>Regression</td><td>P3</td><td>1</td><td class="pass">1</td><td>0</td></tr>
+<tr><td>13</td><td>Template Run (Post-Deployment Delta)</td><td>Regression</td><td>P2</td><td>1</td><td class="pass">1</td><td>0</td></tr>
+<tr><td>14</td><td>Summary Page &amp; Global Search</td><td>Regression</td><td>P3</td><td>2</td><td class="pass">2</td><td>0</td></tr>
+<tr style="background: #e8f5e9; font-weight: bold;"><td></td><td>TOTAL</td><td></td><td></td><td>42</td><td class="pass">42</td><td>0</td></tr>
+</table>
+
+<h3>2.2 Out of Scope</h3>
+<ul>
+<li>Performance/load testing (covered separately)</li>
+<li>Security penetration testing</li>
+<li>Mobile browser compatibility</li>
+<li>Non-FacctList modules (Customer Screening, Transaction Monitoring)</li>
+</ul>
+
+<hr class="section-divider">
+
+<h2>3. New Feature Testing</h2>
+
+<h3>3.1 Attribute Suppress &amp; Enrich — Full Screen Validation</h3>
+
+<p><strong>Feature Description:</strong> Users can suppress or enrich individual attributes (Alias, DOB, ID numbers) on a record. The profile view displays all suppressed/enriched attributes with visual indicators (hand icons for suppress, line icons for enrich).</p>
+
+<p><strong>Acceptance Criteria:</strong></p>
+<ul>
+<li>All attribute types (Alias, DOB, ID) can be suppressed and enriched</li>
+<li>UI displays correct icons for each state (orange hand = suppressed, green lines = enriched)</li>
+<li>Suppress/Enrich form captures Tags, Reason, Review Period, Comment, and Attachment</li>
+<li>Maker-Checker workflow enforced (submit → approve/reject)</li>
+</ul>
+
+<table>
+<tr><th>#</th><th>Test Case</th><th>Record ID</th><th>Attributes Tested</th><th>Result</th></tr>
+<tr><td>1</td><td>Suppress alias attribute with all form fields</td><td>Multiple</td><td>Alias (Foreign, Low quality, Alternate spelling)</td><td class="pass">✅ Pass</td></tr>
+<tr><td>2</td><td>Enrich alias attribute with new name</td><td>Multiple</td><td>Alias</td><td class="pass">✅ Pass</td></tr>
+<tr><td>3</td><td>Suppress DOB attribute</td><td>5889</td><td>Date of Birth</td><td class="pass">✅ Pass</td></tr>
+<tr><td>4</td><td>Suppress/Enrich ID number attribute</td><td>5889</td><td>ID numbers</td><td class="pass">✅ Pass</td></tr>
+</table>
+
+<h3>3.2 Auto Closure/Review on Source Update or Delete</h3>
+
+<p><strong>Feature Description:</strong> When the upstream source (LSEG World-Check) updates or deletes an attribute that was previously suppressed or enriched by the client, the system automatically triggers a review or closes the suppress/enrich action.</p>
+
+<p><strong>Business Rule:</strong> If the source performs the same action the client requested (e.g., client enriched an alias, source adds the same alias), the system auto-closes the client's action as it's no longer needed.</p>
+
+<table>
+<tr><th>#</th><th>Scenario</th><th>Record ID</th><th>Source Action</th><th>System Response</th><th>Result</th></tr>
+<tr><td>1</td><td>Alias + DOB suppressed; source deletes suppressed alias, adds new one</td><td>13262</td><td>Delete alias, Add alias</td><td>Auto-closure triggered</td><td class="pass">✅ Pass</td></tr>
+<tr><td>2</td><td>Foreign alias suppressed; source deletes the same alias</td><td>UID 1</td><td>Delete foreign alias</td><td>Auto-closure — suppress no longer applicable</td><td class="pass">✅ Pass</td></tr>
+<tr><td>3</td><td>Foreign alias enriched; source adds the same attribute</td><td>UID 7</td><td>Add matching foreign alias</td><td>Auto-closure — enrichment fulfilled by source</td><td class="pass">✅ Pass</td></tr>
+<tr><td>4</td><td>Multiple attributes (ID + DOB) suppressed simultaneously; one ID also enriched</td><td>UID 5889</td><td>Concurrent actions</td><td>All actions processed correctly</td><td class="pass">✅ Pass</td></tr>
+</table>
+
+<h3>3.3 List Edit &amp; Maker-Checker Actions</h3>
+
+<p><strong>Feature Description:</strong> Complete list editing capability with full maker-checker workflow. All actions require approval before taking effect.</p>
+
+<table>
+<tr><th>#</th><th>Action</th><th>Actor</th><th>Precondition</th><th>Expected Outcome</th><th>Result</th></tr>
+<tr><td>1</td><td>Edit list</td><td>Maker</td><td>List in active state</td><td>Edit form opens, changes saved as pending</td><td class="pass">✅ Pass</td></tr>
+<tr><td>2</td><td>Claim record</td><td>Approver</td><td>Record in Pending L1</td><td>Record assigned to approver</td><td class="pass">✅ Pass</td></tr>
+<tr><td>3</td><td>Unclaim record</td><td>Approver</td><td>Record claimed by self</td><td>Record returned to unclaimed pool</td><td class="pass">✅ Pass</td></tr>
+<tr><td>4</td><td>Approve record</td><td>Approver</td><td>Record claimed</td><td>Record approved, changes applied</td><td class="pass">✅ Pass</td></tr>
+<tr><td>5</td><td>Reject record</td><td>Approver</td><td>Record claimed</td><td>Record rejected, maker notified</td><td class="pass">✅ Pass</td></tr>
+<tr><td>6</td><td>Withdraw request</td><td>Maker</td><td>Record pending approval</td><td>Request withdrawn, record returns to original state</td><td class="pass">✅ Pass</td></tr>
+</table>
+
+<h3>3.4 Template Run for Suppress/Enrich Attributes</h3>
+
+<p><strong>Feature Description:</strong> Batch processing of suppress/enrich actions via template execution for Alias, ID Value, and DOB attributes.</p>
+
+<table>
+<tr><th>Attribute Type</th><th>Template Action</th><th>Records Processed</th><th>Result</th></tr>
+<tr><td>Alias</td><td>Suppress + Enrich</td><td>Multiple</td><td class="pass">✅ Pass</td></tr>
+<tr><td>ID Value</td><td>Suppress + Enrich</td><td>Multiple</td><td class="pass">✅ Pass</td></tr>
+<tr><td>DOB</td><td>Suppress + Enrich</td><td>Multiple</td><td class="pass">✅ Pass</td></tr>
+</table>
+
+<h3>3.5 Attachment Download — Suppress/Enrich Records</h3>
+
+<p><strong>Feature Description:</strong> Attachments uploaded during suppress/enrich actions can be downloaded from multiple locations in the application.</p>
+
+<table>
+<tr><th>#</th><th>Download Location</th><th>Navigation Path</th><th>How to Download</th><th>Result</th></tr>
+<tr><td>1</td><td>Profile View → Record Details</td><td>Open record → RECORD DETAILS tab</td><td>Click filename in attachment section</td><td class="pass">✅ Pass</td></tr>
+<tr><td>2</td><td>Profile View → Audit Trail</td><td>Open record → AUDIT tab</td><td>Click filename link</td><td class="pass">✅ Pass</td></tr>
+<tr><td>3</td><td>Attribute Popup</td><td>Other names → Paginate → Click icon → Popup</td><td>Scroll to Attachment → Click filename</td><td class="pass">✅ Pass</td></tr>
+<tr><td>4</td><td>Tasks → Pending L1</td><td>Tasks → Click record ID → Profile drawer</td><td>Same as #1 and #2</td><td class="pass">✅ Pass</td></tr>
+<tr><td>5</td><td>Tasks → Review tab</td><td>Tasks → Review → Click record ID</td><td>Same as #1 and #2</td><td class="pass">✅ Pass</td></tr>
+</table>
+
+<p><strong>Filename Verification:</strong> Downloaded filename matches the filename displayed on the UI. ✅ Verified for all downloads.</p>
+
+<hr class="section-divider">
+
+<h2>4. Regression Testing — Concurrency &amp; Data Integrity</h2>
+
+<h3>4.1 Record Suppress — Stale Tab Concurrency</h3>
+
+<p><strong>Objective:</strong> Ensure that when a record is modified in one browser tab and a stale (outdated) view in another tab attempts the same or conflicting action, the system correctly detects the version conflict and prevents data corruption.</p>
+
+<p><strong>Test Method:</strong> Open the same record in two browser tabs. Perform action in Tab 1, get it approved, then attempt the same action from Tab 2 (which still has the old version).</p>
+
+<table>
+<tr><th>#</th><th>Method</th><th>Scenario</th><th>Tab 1 Action</th><th>Tab 2 (Stale)</th><th>Expected</th><th>Result</th></tr>
+<tr><td>1</td><td>POST</td><td>Suppress pending</td><td>Submit suppress</td><td>Try suppress</td><td>Version conflict error</td><td class="pass">✅ Pass</td></tr>
+<tr><td>2</td><td>POST</td><td>After L1 approval</td><td>Suppress → L1 Approve</td><td>Try suppress</td><td>Version conflict error</td><td class="pass">✅ Pass</td></tr>
+<tr><td>3</td><td>POST</td><td>After L2 approval</td><td>Suppress → L2 Approve</td><td>Try suppress</td><td>Version conflict error</td><td class="pass">✅ Pass</td></tr>
+<tr><td>4</td><td>PATCH</td><td>Edit suppressed record</td><td>Edit → Approve</td><td>Edit → Submit</td><td>Version conflict error</td><td class="pass">✅ Pass</td></tr>
+<tr><td>5</td><td>DELETE</td><td>Release + approve</td><td>Release → Approve</td><td>Edit → Submit</td><td>Version conflict error</td><td class="pass">✅ Pass</td></tr>
+</table>
+
+<h3>4.2 Attribute Suppress/Enrich — Stale Tab Concurrency</h3>
+
+<table>
+<tr><th>#</th><th>Method</th><th>Scenario</th><th>Tab 1 Action</th><th>Tab 2 (Stale)</th><th>Expected</th><th>Result</th></tr>
+<tr><td>1</td><td>POST</td><td>Enrich pending</td><td>Enrich attribute</td><td>Try same enrichment</td><td>Version conflict error</td><td class="pass">✅ Pass</td></tr>
+<tr><td>2</td><td>POST</td><td>Enrich approved</td><td>Enrich → Approve</td><td>Try same enrichment</td><td>Version conflict error</td><td class="pass">✅ Pass</td></tr>
+<tr><td>3</td><td>PATCH</td><td>Enrich approved, edit</td><td>Enrich → Approve</td><td>Try edit</td><td>Version conflict error</td><td class="pass">✅ Pass</td></tr>
+<tr><td>4</td><td>POST</td><td>Suppress pending</td><td>Suppress attribute</td><td>Try suppress</td><td>Version conflict error</td><td class="pass">✅ Pass</td></tr>
+<tr><td>5</td><td>POST</td><td>Suppress approved</td><td>Suppress → Approve</td><td>Try suppress again</td><td>Version conflict error</td><td class="pass">✅ Pass</td></tr>
+<tr><td>6</td><td>PATCH</td><td>Suppress approved, edit</td><td>Suppress → Approve</td><td>Try suppress</td><td>Version conflict error</td><td class="pass">✅ Pass</td></tr>
+<tr><td>7</td><td>DELETE</td><td>Release enriched (pending)</td><td>Release enriched attr</td><td>Try action on same</td><td>Version conflict error</td><td class="pass">✅ Pass</td></tr>
+</table>
+
+<hr class="section-divider">
+
+<h2>5. Regression Testing — Bulk Operations</h2>
+
+<h3>5.1 Bulk Delete (UI)</h3>
+<table>
+<tr><th>#</th><th>Test Case</th><th>Action</th><th>Expected</th><th>Result</th></tr>
+<tr><td>1</td><td>Delete multiple records simultaneously</td><td>Select multiple → Delete</td><td>All selected records removed, confirmation shown</td><td class="pass">✅ Pass</td></tr>
+</table>
+
+<h3>5.2 Bulk Upload — Concurrent Job Handling</h3>
+<table>
+<tr><th>#</th><th>Test Case</th><th>Action</th><th>Expected</th><th>Result</th></tr>
+<tr><td>1</td><td>Upload while another job is running</td><td>Attempt second upload</td><td>System blocks with appropriate message</td><td class="pass">✅ Pass</td></tr>
+</table>
+
+<h2>6. Regression Testing — External API</h2>
+
+<table>
+<tr><th>#</th><th>Test Case</th><th>Parameters</th><th>Expected</th><th>Result</th></tr>
+<tr><td>1</td><td>High-volume API rate limiting</td><td>500 requests in 90 seconds</td><td>All processed, no 429 errors</td><td class="pass">✅ Pass</td></tr>
+</table>
+
+<h2>7. Regression Testing — Task Management</h2>
+
+<table>
+<tr><th>#</th><th>Task Status</th><th>Verified On</th><th>Details</th><th>Result</th></tr>
+<tr><td>1</td><td>Approved</td><td>Task Page → Closed</td><td>Shows "Approved" with timestamp</td><td class="pass">✅ Pass</td></tr>
+<tr><td>2</td><td>Rejected</td><td>Task Page → Closed</td><td>Shows "Rejected" with reason</td><td class="pass">✅ Pass</td></tr>
+<tr><td>3</td><td>Withdrawn</td><td>Task Page → Closed</td><td>Shows "Withdrawn" status</td><td class="pass">✅ Pass</td></tr>
+</table>
+
+<h2>8. Regression Testing — Reporting &amp; Search</h2>
+
+<table>
+<tr><th>#</th><th>Test Case</th><th>Expected</th><th>Result</th></tr>
+<tr><td>1</td><td>Export keyword report for each list</td><td>Report contains records matching source file</td><td class="pass">✅ Pass</td></tr>
+<tr><td>2</td><td>Template run post-deployment — no delta</td><td>No unexpected deltas generated</td><td class="pass">✅ Pass</td></tr>
+<tr><td>3</td><td>Summary page loads with correct counts</td><td>All module counts match</td><td class="pass">✅ Pass</td></tr>
+<tr><td>4</td><td>Global search returns relevant results</td><td>Search by name/ID works</td><td class="pass">✅ Pass</td></tr>
+</table>
+
+<hr class="section-divider">
+
+<h2>9. Defects Found</h2>
+
+<table>
+<tr><th>#</th><th>Severity</th><th>Module</th><th>Description</th><th>Status</th><th>JIRA</th></tr>
+<tr><td colspan="6" style="text-align: center; color: #28a745; font-style: italic;">No defects found during this testing cycle</td></tr>
+</table>
+
+<hr class="section-divider">
+
+<h2>10. Test Environment &amp; Configuration</h2>
+
+<table>
+<tr><th>Parameter</th><th>Value</th></tr>
+<tr><td>Application URL</td><td>https://qa-saas.facctum.com</td></tr>
+<tr><td>Environment</td><td>QA</td></tr>
+<tr><td>Browser</td><td>Chromium (latest)</td></tr>
+<tr><td>Viewport</td><td>1920 × 1080</td></tr>
+<tr><td>Test Framework</td><td>Playwright + Cucumber.js (TypeScript)</td></tr>
+<tr><td>Organisation</td><td>fremenbank</td></tr>
+<tr><td>Maker User</td><td>reema.singh@facctum.com</td></tr>
+<tr><td>Approver User</td><td>reema.singh+2@facctum.com</td></tr>
+<tr><td>Test Data Source</td><td>LSEG World-Check (WC Main Premium list)</td></tr>
+</table>
+
+<h2>11. Risks &amp; Assumptions</h2>
+
+<div class="risk-box">
+<table>
+<tr><th>#</th><th>Type</th><th>Description</th><th>Mitigation</th></tr>
+<tr><td>1</td><td>Assumption</td><td>Test data (suppressed/enriched records) pre-exists in QA</td><td>Verified before execution</td></tr>
+<tr><td>2</td><td>Assumption</td><td>Source file updates simulated via existing data</td><td>Used records with known source history</td></tr>
+<tr><td>3</td><td>Risk</td><td>Concurrent sessions may behave differently under load</td><td>Covered by stale-tab tests</td></tr>
+<tr><td>4</td><td>Risk</td><td>Attachment download may vary by file type</td><td>Tested .xlsx, .msg, .pdf</td></tr>
+</table>
+</div>
+
+<hr class="section-divider">
+
+<h2>12. Test Execution Summary</h2>
+
+<div class="conclusion-box">
+<table>
+<tr><th>Metric</th><th>Value</th></tr>
+<tr><td><strong>Total Test Scenarios</strong></td><td><strong>42</strong></td></tr>
+<tr><td>Passed</td><td style="color: #28a745; font-weight: bold;">42</td></tr>
+<tr><td>Failed</td><td>0</td></tr>
+<tr><td>Blocked</td><td>0</td></tr>
+<tr><td><strong>Pass Rate</strong></td><td style="color: #28a745; font-weight: bold;">100%</td></tr>
+<tr><td>Execution Date</td><td>May 2026</td></tr>
+</table>
+</div>
+
+<h2>13. Conclusion &amp; Recommendation</h2>
+
+<div class="conclusion-box">
+<p>All planned test scenarios for release v1.2.1 have been executed successfully with a <strong>100% pass rate</strong>. New features (Attribute Suppress/Enrich, Auto-Closure on Source Update, Attachment Download) are functioning as per requirements. Regression testing confirms no existing functionality has been impacted.</p>
+<p><strong>Recommendation:</strong> Release v1.2.1 is <strong>approved for promotion</strong> to the next environment (UAT/Production) from a QA perspective.</p>
+</div>
+
+<hr class="section-divider">
+
+<h2>14. Sign-Off</h2>
+
+<table>
+<tr><th>Role</th><th>Name</th><th>Date</th><th>Signature</th></tr>
+<tr><td>QA Lead</td><td></td><td></td><td></td></tr>
+<tr><td>Dev Lead</td><td></td><td></td><td></td></tr>
+<tr><td>Product Owner</td><td></td><td></td><td></td></tr>
+<tr><td>Release Manager</td><td></td><td></td><td></td></tr>
+</table>
+
+<hr class="section-divider">
+
+<h2>Appendix A: Test Artifacts</h2>
+
+<table>
+<tr><th>Artifact</th><th>Location</th></tr>
+<tr><td>Automated Test Scripts</td><td>src/scripts/debug-attachment-download.ts, debug-ser-e2e.ts</td></tr>
+<tr><td>Feature Files</td><td>src/features/parallelSuppressEnrich.feature</td></tr>
+<tr><td>Screenshots</td><td>reports/debug-attach-*.png</td></tr>
+<tr><td>Download Evidence</td><td>reports/debug-downloads/test-results.json</td></tr>
+<tr><td>Allure Report</td><td>reports/qa/allure-report/</td></tr>
+</table>
+
+<h2>Appendix B: Record IDs Used in Testing</h2>
+
+<table>
+<tr><th>Record ID</th><th>List</th><th>Action Tested</th></tr>
+<tr><td>13262</td><td>WC Main Premium</td><td>Auto-closure (Alias + DOB suppress)</td></tr>
+<tr><td>UID 1</td><td>WC Main Premium</td><td>Foreign alias suppress → source delete</td></tr>
+<tr><td>UID 7</td><td>WC Main Premium</td><td>Foreign alias enrich → source add</td></tr>
+<tr><td>UID 5889</td><td>WC Main Premium</td><td>Multi-attribute suppress/enrich</td></tr>
+<tr><td>34</td><td>WC Main Premium</td><td>Record suppress + attachment download</td></tr>
+<tr><td>49</td><td>WC Main Premium</td><td>Record suppress (Pending L1)</td></tr>
+<tr><td>53</td><td>WC Main Premium</td><td>Attribute suppress</td></tr>
+<tr><td>113</td><td>WC Main Premium</td><td>Attribute enrich</td></tr>
+<tr><td>171758</td><td>WC Main Premium</td><td>Attribute suppress (Review tab)</td></tr>
+<tr><td>9043998</td><td>WC Main Premium</td><td>Attribute suppress (Review tab)</td></tr>
+</table>
+
+<br><br>
+<p style="text-align: center; color: #666; font-size: 9pt; border-top: 1px solid #ccc; padding-top: 10px;">
+<em>End of Document — Generated from test execution evidence | FacctList v1.2.1 | © Facctum 2026</em>
+</p>
+
+</body>
+</html>
