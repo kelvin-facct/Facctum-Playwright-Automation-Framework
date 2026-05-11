@@ -784,6 +784,178 @@ Key details:
 - Full flow steps combine multiple steps for common workflows
 - Withdraw workflow allows removing pending records by ID or selecting the last withdrawable record
 
+### Commercial List Steps (commercialList.steps.ts)
+Steps for testing the Commercial List (WC Main Premium) filter validation against MongoDB.
+
+```gherkin
+# Navigation
+When user clicks on list management
+Then user should see "facctlist" in the end of url
+When user click on "Watchlist" and then clicks on "Commercial list"
+Then Commercial list page should open
+When user searches for "WC Main Premium" in commercial list
+And user clicks on "WC Main Premium" list
+
+# Tab count validation
+Then user saves the active records count for future validation
+Then the active records count should match MongoDB
+Then the error records count should match MongoDB
+Then the deleted records count should match MongoDB
+Then the suppressed enriched records count should match MongoDB
+
+# Filter operations
+When user clicks on the filter icon
+When user selects "active" in the "PEP Status" filter
+When user clicks Apply filter
+When user clears applied filters
+
+# Non-failing comparison steps (for consolidated scenarios)
+Then compare filtered count with MongoDB for "PEP Status" "active"
+Then compare filtered count with MongoDB for multi-filter "category=INDIVIDUAL,pepStatus=active"
+Then print filter comparison summary
+
+# Deleted tab steps
+When user clicks on the Deleted tab
+Then compare deleted filtered count with MongoDB for "PEP Status" "active"
+Then compare deleted filtered count with MongoDB for multi-filter "category=INDIVIDUAL,pepStatus=active"
+Then validate deleted random filter selections against MongoDB
+
+# Suppressed/Enriched tab steps
+When user clicks on the Suppressed enriched tab
+Then compare suppressed filtered count with MongoDB for "Action" "2002"
+Then compare suppressed filtered count with MongoDB for multi-filter "statusId=2002,entityTypeName=Entity"
+Then validate suppressed random filter selections against MongoDB
+
+# Random filter validation (randomized testing)
+When user selects a random value in the "Category" filter and stores it
+Then validate random filter selections against MongoDB
+
+# Download validation (row count + data integrity)
+When user triggers download as "tsv"
+When user triggers download as "xlsx"
+When user waits for download to complete
+Then the downloaded "tsv" file should match MongoDB row count and record data
+Then the downloaded "xlsx" file should match MongoDB row count and record data
+
+# Date filter
+When user sets "Entered Date" date filter from "01/01/2024" to "31/12/2024"
+Then the filtered record count should match MongoDB for entered date from "01/01/2024" to "31/12/2024"
+
+# Filter banner assertions
+Then the filter banner should display "PEP Status"
+Then the filter banner should display 2 filter chips
+
+# Pagination assertions
+Then the pagination should be valid and navigable
+Then the pagination should show "1-25 of 100"
+Then the pagination total count should be 100
+Then the pagination should show rows 1 to 25
+
+# Download tab assertions
+Then the latest download entry should show type "Filtered"
+Then the latest download entry should show file type "tsv"
+Then the latest download entry should show 1 filters applied
+Then the latest download entry should show status "Completed"
+Then the latest download filter details should show "PEP Status"
+
+# Advanced filter operations
+Then the visible table rows should match MongoDB records
+When user selects Select All in the "Category" filter
+Then the filtered count should equal the total unfiltered count
+Then compare filtered count with MongoDB for multi-select "Category" values "INDIVIDUAL,DIPLOMAT"
+When user removes the filter chip "Category = INDIVIDUAL"
+Then the filtered count should match MongoDB for remaining filters
+Then the pagination should show correct row count after changing rows per page
+Then the sum of Active and Deleted tab counts should match total records in DB
+```
+
+Key details:
+- Uses direct page interactions (no dedicated page object - uses inline locators)
+- MongoDB collection: `facctumRefinitivListHist` with base filter `{effEndDateTime: {$gt: new Date()}}`
+- Tab count validation uses `listAnalytics` collection for Active/Error/Deleted counts
+- Suppressed/Enriched count uses `facctumRecordEnrMaster` collection
+- Filter categories mapped to MongoDB fields:
+  - Category → `category`
+  - Citizenship → `citizenshipList`
+  - Country → `countryList`
+  - Keyword → `keywords`
+  - PEP Status → `pepStatus`
+  - Special Interest Categories → `specialInterestCategories`
+  - Sub Category → `subCategory`
+  - Type → `entityTypeName`
+  - Update Category → `updateCategory`
+- **Random filter validation**: Picks a random value from available filter options, applies it, then validates the UI count against MongoDB. Useful for exploratory/fuzz testing of filter combinations.
+  - `user selects a random value in the {string} filter and stores it` - Opens filter category, collects all available values, picks one at random, selects it, stores via TestDataStore
+  - `validate random filter selections against MongoDB` - Reads UI count, builds MongoDB query from all stored random selections, compares counts, logs results, reloads page
+- Non-failing comparison steps (`compare filtered count with MongoDB for`) log mismatches without failing immediately; `print filter comparison summary` reports all results at the end and fails if any mismatches exist
+- Feature file: `src/features/commercialList.feature` with a single consolidated scenario (@CommercialListValidation) covering:
+  - Tab count validation (Active, Error, Deleted, Suppressed/Enriched vs MongoDB)
+  - Single filter validation (9 filters: PEP Status, Update Category, Category, Sub Category, Type, Citizenship, Country, Keyword, Special Interest Categories)
+  - Multi-filter combinations (2-4 filter combos)
+  - Random filter validation (single and multi-filter random selections)
+  - Download validation (TSV and Excel: row count vs UI count + record data integrity vs MongoDB)
+- **Download data validation**: After verifying row counts, the download step also samples records (first 10 + last 5) from the file and compares field values against MongoDB. Fields validated: Record ID, Primary name, Type, Keyword, Category, Sub-category, Update category, PEP status. Fails if any sampled record has mismatched data.
+- All validations run in a single navigation flow to avoid repeated login/navigation overhead
+- Tags: `@CommercialListValidation @CommercialListActive @org:facctum` (Active tab), `@CommercialListValidation @CommercialListDeleted @org:facctum` (Deleted tab), `@CommercialListValidation @CommercialListSuppressed @org:facctum` (Suppressed/Enriched tab), `@CommercialListValidation @CommercialListAdvanced @org:facctum` (Advanced filter operations)
+- **Deleted tab validation** (second scenario `@CommercialListDeleted`):
+  - Switches to Deleted tab after navigation
+  - MongoDB base filter for Deleted: `{actionId: 3}` (instead of `{effEndDateTime: {$gt: new Date()}}` for Active)
+  - Single filter validation (PEP Status, Category, Type, Update Category)
+  - Multi-filter combinations (Category + PEP Status, Type + Update Category)
+  - Random filter validation (single and multi-filter random selections)
+  - New steps required:
+    - `user clicks on the Deleted tab` - Switches to the Deleted records tab
+    - `compare deleted filtered count with MongoDB for {string} {string}` - Non-failing comparison using actionId=3 base filter
+    - `compare deleted filtered count with MongoDB for multi-filter {string}` - Multi-filter comparison using actionId=3 base filter
+    - `validate deleted random filter selections against MongoDB` - Random filter validation using actionId=3 base filter
+- **Suppressed/Enriched tab validation** (third scenario `@CommercialListSuppressed`):
+  - Switches to Suppressed/Enriched tab after navigation
+  - MongoDB collection: `facctumRecordEnrMaster` with base filter `{listId: 2, effEndDateTime: {$gt: new Date()}}`
+  - Filter categories mapped to MongoDB fields:
+    - Action → `statusId` (values: 2002=Record suppress, 2003=Attribute suppress, 2004=Attribute enrich)
+    - Type → `entityTypeName` (values: Entity, Individual)
+    - Tag → `tagList` (numeric tag IDs, e.g., 47, 50)
+  - Single filter validation (Action with 2002/2003/2004, Type with Entity/Individual, Tag with 47/50)
+  - Multi-filter combinations (Action + Type)
+  - Random filter validation (Action + Type random selections)
+  - Steps:
+    - `user clicks on the Suppressed enriched tab` - Switches to the Suppressed/Enriched records tab
+    - `compare suppressed filtered count with MongoDB for {string} {string}` - Non-failing comparison using facctumRecordEnrMaster base filter
+    - `compare suppressed filtered count with MongoDB for multi-filter {string}` - Multi-filter comparison (format: `statusId=2002,entityTypeName=Entity`)
+    - `validate suppressed random filter selections against MongoDB` - Random filter validation using facctumRecordEnrMaster base filter
+- **Filter banner assertions**: Verify the filter chip labels and count displayed in the filter banner after applying filters.
+  - `the filter banner should display {string}` - Checks that a chip with the given text exists in `.filter-attributes .facct-chip-label .label`
+  - `the filter banner should display {int} filter chips` - Verifies the number of `.facct-chip` elements in the banner
+- **Pagination assertions**: Verify pagination text and range in `.facct-table-pagination`.
+  - `the pagination should be valid and navigable` - Validates pagination displays valid range (from=1, to>0, total>0) and tests next/previous page navigation if multiple pages exist
+  - `the pagination should show {string}` - Checks pagination container contains the expected text
+  - `the pagination total count should be {int}` - Extracts and verifies the total from "X-Y of Z" format
+  - `the pagination should show rows {int} to {int}` - Verifies the from/to range in pagination
+- **Download tab assertions**: Verify download entries in the Downloads tab (switches to tab, asserts, switches back).
+  - `the latest download entry should show type {string}` - Checks download type column (index 4) of first row
+  - `the latest download entry should show file type {string}` - Checks file type column (index 3)
+  - `the latest download entry should show {int} filters applied` - Checks filters applied column (index 2)
+  - `the latest download entry should show status {string}` - Checks status column (index 5)
+  - `the latest download filter details should show {string}` - Clicks eye icon on first row, opens drawer, verifies filter text
+- **Advanced filter operations** (fourth scenario `@CommercialListAdvanced`):
+  - Validates advanced filter behaviors beyond simple single/multi-filter count comparisons
+  - Tests covered:
+    1. **Visible table rows match DB** - Compares first page of visible rows against MongoDB records
+    2. **Select All equals total** - Applying "Select All" in a filter category should return the same count as unfiltered
+    3. **Multi-select OR logic** - Selecting multiple values within the same filter category uses OR logic (e.g., INDIVIDUAL OR DIPLOMAT)
+    4. **Filter chip removal** - Removing an individual filter chip updates results correctly; validates remaining filter count against MongoDB
+    5. **Rows per page change** - Changing pagination rows-per-page displays the correct number of rows
+    6. **Cross-tab count consistency** - Sum of Active + Deleted tab counts should equal total records in MongoDB
+  - New steps required:
+    - `the visible table rows should match MongoDB records` - Extracts Record IDs from visible table rows and verifies they exist in MongoDB
+    - `user selects Select All in the {string} filter` - Clicks "Select All" checkbox in the specified filter category
+    - `the filtered count should equal the total unfiltered count` - Compares filtered pagination total with previously stored unfiltered total
+    - `compare filtered count with MongoDB for multi-select {string} values {string}` - Validates OR logic: MongoDB query uses `$in` with comma-separated values (e.g., `{category: {$in: ["INDIVIDUAL", "DIPLOMAT"]}}`)
+    - `user removes the filter chip {string}` - Opens the filter drawer, navigates to the matching filter tab, unchecks the specified value, and applies the filter (e.g., "Category = INDIVIDUAL")
+    - `the filtered count should match MongoDB for remaining filters` - After chip removal, validates count against MongoDB using only the remaining active filters
+    - `the pagination should show correct row count after changing rows per page` - Changes rows-per-page (e.g., 25→50→100) and verifies displayed row count matches the selection
+    - `the sum of Active and Deleted tab counts should match total records in DB` - Extracts counts from Active and Deleted tabs, sums them, and compares against MongoDB total count
+
 ### UK Sanctions Advanced Filter Steps (ukSanctionsAdvFilter.steps.ts)
 Steps for testing the UK SANCTIONS regulatory list advanced filtering and download functionality.
 

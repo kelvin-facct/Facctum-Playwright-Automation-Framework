@@ -1,4 +1,28 @@
 {
   "mcpServers": {
+    "mongodb": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mongodb-mcp-server@latest",
+        "--readOnly"
+      ],
+      "env": {
+        "MDB_MCP_CONNECTION_STRING": "mongodb://qasaasuserro:TtVWERHlo0W5g34V@localhost:27023/screenDB?tls=true&tlsAllowInvalidCertificates=true&directConnection=true",
+        "MDB_MCP_TELEMETRY": "disabled",
+        "NODE_TLS_REJECT_UNAUTHORIZED": "0"
+      },
+      "autoApprove": [
+        "find",
+        "aggregate",
+        "count",
+        "list-collections",
+        "list-databases",
+        "collection-schema",
+        "collection-indexes",
+        "connect",
+        "atlas-local-list-deployments"
+      ]
+    }
   }
 }
