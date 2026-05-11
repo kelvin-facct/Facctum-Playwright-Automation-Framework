@@ -1,5 +1,28 @@
 import { MongoClient, Db, Filter, Document } from "mongodb";
-import { EnvConfig } from "../config/env";
+import * as fs from "fs";
+import * as path from "path";
+
+// Load secrets from .env.secrets file (same approach as env.ts)
+function loadMongoSecrets(): Record<string, string> {
+  const secrets: Record<string, string> = {};
+  try {
+    const secretsPath = path.resolve(__dirname, "../config/.env.secrets");
+    if (fs.existsSync(secretsPath)) {
+      const content = fs.readFileSync(secretsPath, "utf-8");
+      content.split("\n").forEach(line => {
+        const [key, ...valueParts] = line.split("=");
+        if (key && valueParts.length && !key.trim().startsWith("#")) {
+          secrets[key.trim()] = valueParts.join("=").trim();
+        }
+      });
+    }
+  } catch {
+    // Secrets file is optional
+  }
+  return secrets;
+}
+
+const mongoSecrets = loadMongoSecrets();
 
 /**
  * MongoDB Helper Utility for TypeScript/Playwright
@@ -28,14 +51,14 @@ export class MongoDBHelper {
     tlsEnabled?: boolean;
   }) {
     // Load from environment or use provided options
-    // EnvConfig loads .env.secrets automatically
-    this.host = options?.host || process.env.MONGO_HOST || "localhost";
-    this.port = options?.port || process.env.MONGO_PORT || "27023";
-    this.database = options?.database || process.env.MONGO_DATABASE || "screenDB";
-    this.username = options?.username || process.env.MONGO_USERNAME || "";
-    this.password = options?.password || process.env.MONGO_PASSWORD || "";
+    // Priority: options > process.env > .env.secrets > defaults
+    this.host = options?.host || process.env.MONGO_HOST || mongoSecrets.MONGO_HOST || "localhost";
+    this.port = options?.port || process.env.MONGO_PORT || mongoSecrets.MONGO_PORT || "27023";
+    this.database = options?.database || process.env.MONGO_DATABASE || mongoSecrets.MONGO_DATABASE || "screenDB";
+    this.username = options?.username || process.env.MONGO_USERNAME || mongoSecrets.MONGO_USERNAME || "";
+    this.password = options?.password || process.env.MONGO_PASSWORD || mongoSecrets.MONGO_PASSWORD || "";
     this.authEnabled = options?.authEnabled ?? (this.username !== "");
-    this.tlsEnabled = options?.tlsEnabled ?? (process.env.MONGO_TLS_ENABLED === "true");
+    this.tlsEnabled = options?.tlsEnabled ?? ((process.env.MONGO_TLS_ENABLED || mongoSecrets.MONGO_TLS_ENABLED) === "true");
   }
 
   /**
@@ -58,7 +81,7 @@ export class MongoDBHelper {
       }
       if (this.tlsEnabled) {
         params.push("tls=true");
-        params.push("tlsAllowInvalidCertificates=true");
+        params.push("tlsInsecure=true");
       }
 
       if (params.length > 0) {
@@ -166,6 +189,19 @@ export class MongoDBHelper {
     return filter 
       ? await collection.countDocuments(filter)
       : await collection.countDocuments();
+  }
+
+  /**
+   * Get count of distinct values for a field matching a filter
+   */
+  async getDistinctCount(collectionName: string, field: string, filter?: Filter<Document>): Promise<number> {
+    if (!this.db) {
+      throw new Error("[MongoDBHelper] Not connected to database");
+    }
+
+    const collection = this.db.collection(collectionName);
+    const distinctValues = await collection.distinct(field, filter || {});
+    return distinctValues.length;
   }
 
   /**
