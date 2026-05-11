@@ -127,28 +127,24 @@ Given("a clean record is identified with no pending actions", { timeout: 5 * 60 
 
 /**
  * Creates a separate browser session for the approver user.
+ * Uses BrowserManager for consistent browser launch and EnvConfig for settings.
  * Stores the approver's browser, context, page, and pageManager in scenarioContext.
  */
 async function setupApproverSession(world: CustomWorld): Promise<void> {
-  // Launch a SEPARATE browser — force headless: false to match working E2E debug script
-  const approverBrowser: Browser = await chromium.launch({
-    headless: false,
-    args: [
-      '--disable-blink-features=AutomationControlled',
-      '--force-device-scale-factor=0.67'
-    ]
-  });
+  // Use BrowserManager for consistent browser launch (respects BROWSER env and config)
+  const approverBrowser: Browser = await BrowserManager.launchBrowser();
   const { width, height } = EnvConfig.RESOLUTION;
 
+  // Create context with proper viewport and timeout from config
   const approverContext: BrowserContext = await approverBrowser.newContext({
     viewport: { width, height },
     deviceScaleFactor: 1,
   });
-  approverContext.setDefaultTimeout(60000);
+  approverContext.setDefaultTimeout(EnvConfig.EXTENDED_TIMEOUT);
 
   const approverPage: Page = await approverContext.newPage();
 
-  // Login as approver in this isolated context
+  // Login as approver using AuthHelper
   await AuthHelper.login(approverPage, {
     orgId: EnvConfig.APPROVER_ORG_ID || EnvConfig.ORG_ID,
     email: EnvConfig.APPROVER_USERNAME,
@@ -162,7 +158,7 @@ async function setupApproverSession(world: CustomWorld): Promise<void> {
   world.scenarioContext.set("approverPage", approverPage);
   world.scenarioContext.set("approverPageManager", approverPageManager);
 
-  logger.info("Approver session created in separate isolated browser");
+  logger.info("Approver session created via BrowserManager");
 }
 
 /**

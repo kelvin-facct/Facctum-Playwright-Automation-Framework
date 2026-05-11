@@ -3,11 +3,7 @@
  * Usage: npx ts-node src/scripts/test-mongo.ts
  */
 import { MongoDBHelper, UKSanctionsMongoQueries } from "../helpers/mongoHelper";
-import * as dotenv from "dotenv";
-import * as path from "path";
-
-// Load .env.secrets
-dotenv.config({ path: path.join(__dirname, "../config/.env.secrets") });
+import { EnvConfig } from "../config/env";
 
 async function testMongoConnection() {
   console.log("=== MongoDB Connection Test ===\n");

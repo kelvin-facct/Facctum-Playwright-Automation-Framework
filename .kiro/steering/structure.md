@@ -88,6 +88,27 @@ src/
 │   │                         #              hasVersionConflictError, hasActionSucceeded, closeProfileView
 │   │                         # Form fields: tags (multi-select), reason, reviewPeriod, comment, attachment
 │   │                         # Validation: isProfileViewOpen, hasPendingApprovalWarning, isSubmitEnabled
+│   │                         # Sections: Record details, Audit tab, Request for Review tab,
+│   │                         #   Attribute suppress/enrich popups
+│   │                         # Tabs: clickAuditTab(), clickRecordDetailsTab()
+│   │                         #   REQUEST FOR REVIEW tab — default tab when opening from Tasks Pending L1
+│   │                         # Attachment downloads: downloadAttachmentFromRecordDetails(),
+│   │                         #   downloadAttachmentFromAudit(), downloadAttachmentFromPopup()
+│   │                         # Enrichment detail rows: enrichmentDetailRows — table rows in REQUEST FOR
+│   │                         #   REVIEW tab; each row may have an attachment icon (envelope/file icon)
+│   │                         #   rowAttachmentIcons — locates attachment icons within enrichment rows
+│   │                         #   (MailIcon, AttachFileIcon, AttachmentIcon, etc.)
+│   │                         # Attribute icons: openSuppressedAttributePopup() — clicks orange hand
+│   │                         #   (already suppressed), blue hand (suppress request), enrich icon,
+│   │                         #   or EditNoteIcon SVGs ("Attribute suppressed"/"Attribute enriched")
+│   │                         #   found in Review/Tasks views
+│   │                         # Popup management: closeAttributePopup() — closes popup via CANCEL or Escape
+│   │                         # Diagnostics: getAttributeIconCount() returns { orange, blue, enriched, enrich },
+│   │                         #   isAttachmentVisible() checks RECORD DETAILS view only
+│   │                         # Toaster capture: captureToaster(label) — captures visible toaster/alert/snackbar
+│   │                         #   messages from the UI; returns string[]; logs via Winston
+│   │                         # Download methods return { filename, size } or null if no attachment found
+│   │                         # Note: call initAttachmentLocators() is automatic (called internally)
 │   │                         # Access via: pageManager.getProfileViewPage()
 │   ├── UKSANCTIONSadvfilterPage.ts  # UK Sanctions advanced filter page object
 │   │                         # Flow: Watchlist → Regulatory List → UK SANCTIONS → Filter/Download records
