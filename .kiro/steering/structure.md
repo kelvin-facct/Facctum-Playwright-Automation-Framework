@@ -121,18 +121,53 @@ src/
 │   │                         #              checkDownloadStatus (verify download completion and download file)
 │   │                         # Key locators: filterButton, filterPanel, applyButton, downloadButton
 │   │                         # Access via: pageManager.getUKSanctionsAdvFilterPage()
-│   └── OFACadvfilterPage.ts  # OFAC advanced filter page object
-│                             # Flow: Watchlist → Regulatory List → OFAC → Filter/Download records
-│                             # Tabs: Records, Downloads, Active, Error, Deleted
-│                             # Delta view tabs: New, Amended, Deleted, Stable, Error
-│                             # Filter categories: Address country, Citizenship country, Nationality country,
-│                             #                    Program name, Type, Last Updated Date (date range)
-│                             # Download formats: Excel (.xlsx), Tab separated (.tsv)
-│                             # Key methods: applyOFACFilter (main orchestration across all tabs),
-│                             #              applyFiltersForTab, applyAllFiltersCombined, checkDownloadStatus
-│                             # Key locators: filterButton, filterPanel, applyButton, downloadButton
-│                             # Test data: address=Cuba, citizenship=Egypt, nationality=Egypt, program=CAR, type=Individual
-│                             # Access via: pageManager.getOFACAdvFilterPage()
+│   ├── OFACadvfilterPage.ts  # OFAC advanced filter page object
+│   │                         # Flow: Watchlist → Regulatory List → OFAC → Filter/Download records
+│   │                         # Tabs: Records, Downloads, Active, Error, Deleted
+│   │                         # Delta view tabs: New, Amended, Deleted, Stable, Error
+│   │                         # Filter categories: Address country, Citizenship country, Nationality country,
+│   │                         #                    Program name, Type, Last Updated Date (date range)
+│   │                         # Download formats: Excel (.xlsx), Tab separated (.tsv)
+│   │                         # Key methods: applyOFACFilter (main orchestration across all tabs),
+│   │                         #              applyFiltersForTab, applyAllFiltersCombined, checkDownloadStatus
+│   │                         # Key locators: filterButton, filterPanel, applyButton, downloadButton
+│   │                         # Test data: address=Cuba, citizenship=Egypt, nationality=Egypt, program=CAR, type=Individual
+│   │                         # Access via: pageManager.getOFACAdvFilterPage()
+│   ├── SearchPage.ts         # FacctList Global Search page object
+│   │                         # Flow: FacctList sidebar → Search → Enter query → View results → Open record
+│   │                         # Search: searchByQuery, searchByRecordId, searchByName, clearSearch
+│   │                         # Filters: openFilterPanel, selectEntityType, selectListType, selectStatus,
+│   │                         #          applyFilters, clearFilters
+│   │                         # Results: getResultCount, getTotalResultCount, hasResults, hasNoResults,
+│   │                         #          openRecordAtRow, getRecordIdAtRow
+│   │                         # Pagination: goToNextPage, goToLastPage, isNextPageAvailable
+│   │                         # Access via: pageManager.getSearchPage()
+│   └── SuppressedEnrichedPage.ts  # Suppressed and Enriched module page object
+│                             # Flow: FacctList sidebar → Watchlist → Suppressed and Enriched
+│                             # Purpose: View and manage all suppressed/enriched record overrides
+│                             # Tabs: All, Suppressed, Enriched, Pending, Active, Expired
+│                             # Filters: List Name, Record Type, Action Type, Status, Tag, Reason, Review Period
+│                             # Key methods: navigateToSuppressedEnriched, clickAllTab, clickSuppressedTab,
+│                             #              clickEnrichedTab, clickPendingTab, clickActiveTab, clickExpiredTab,
+│                             #              openFilterPanel, selectListNameFilter, selectActionTypeFilter,
+│                             #              applyFilters, clearFilters, searchByRecordId,
+│                             #              getRowCount, hasData, openRecordAtRow,
+│                             #              isDetailViewOpen, closeDetailView, clickReleaseButton,
+│                             #              goToNextPage, goToLastPage, isPageLoaded
+│                             # Detail drawer: Shows record ID, name, action type, status, tags, reason,
+│                             #               review period, expiry date, created by, approved by
+│                             # Access via: pageManager.getSuppressedEnrichedPage()
+│   ├── DataExportPage.ts     # Data Export module page object
+│                             # Flow: FacctList sidebar → Data Export → Templates/Destination Config
+│                             # Purpose: Manage data export templates and destinations
+│                             # Sections: Templates, Destination Config
+│                             # Key methods: navigateToDataExport, navigateToTemplates,
+│                             #              navigateToDestinationConfig,
+│                             #              getTemplateCount, clickCreateTemplate, enterTemplateName,
+│                             #              getDestinationCount, clickCreateDestination, enterDestinationName,
+│                             #              selectDestinationType, searchInTable, getTableRowCount,
+│                             #              hasNoData, isPageLoaded, clickSubmit, clickCancel
+│                             # Access via: pageManager.getDataExportPage()
 │
 ├── helpers/          # Reusable utilities
 │   ├── authHelper.ts         # Reusable authentication functions
@@ -142,6 +177,7 @@ src/
 │   ├── dbQuery.ts            # Database queries with auto SSM tunnel management
 │   ├── excelReader.ts        # Excel file reader for data-driven testing
 │   ├── mongoHelper.ts        # MongoDB helper for UI data validation against MongoDB
+│   ├── networkProfiler.ts    # API performance profiler for Playwright pages
 │   ├── playwrightActions.ts  # Wrapper for common Playwright operations
 │   ├── scenarioContext.ts    # Cross-step data sharing
 │   └── testDataStore.ts      # Persist data across scenarios via JSON file
@@ -513,6 +549,59 @@ Key methods:
 - `clear()` - Delete all stored data and lock file
 
 Data is stored in `reports/test-data.json` and should be cleared in the AfterAll hook to ensure clean state between test runs. Use namespaced keys to avoid conflicts in parallel execution: `"feature.keyName"`.
+
+### NetworkProfiler (networkProfiler.ts)
+Attach to any Playwright Page to capture API performance metrics during test execution. Useful for identifying slow or failing APIs in test flows.
+
+```typescript
+import { NetworkProfiler } from "../helpers/networkProfiler";
+
+// Create profiler with options
+const profiler = new NetworkProfiler({ threshold: 2000 });
+
+// Attach to a page (call once per page)
+profiler.attach(page);
+
+// ... run your test flow ...
+
+// Get structured report
+const report = profiler.getReport();
+console.log(report.summary);
+// { totalCalls, slowCalls, failedCalls, avgMs, p50Ms, p90Ms, p95Ms, maxMs }
+
+// Print slow APIs to logger
+profiler.printSlowApis();
+
+// Get raw metrics array
+const metrics = profiler.getMetrics();
+
+// Attach to Allure report
+world.attach(JSON.stringify(report, null, 2), "application/json");
+
+// Reset for next flow
+profiler.clear();
+```
+
+Constructor options (`ProfilerOptions`):
+- `threshold` - Threshold in ms to flag as slow (default: 2000)
+- `apiOnly` - Only capture XHR/fetch, skip images/fonts/stylesheets (default: true)
+- `includePattern` - Regex to include only matching URLs
+- `excludePattern` - Regex to exclude matching URLs
+
+Key methods:
+- `attach(page)` - Attach profiler to a Playwright Page (call once per page)
+- `getReport()` - Get structured report with summary, slow, failed, and all API metrics
+- `printSlowApis()` - Log slow APIs via Winston logger
+- `getMetrics()` - Get raw `ApiMetric[]` array
+- `clear()` - Reset all captured data
+
+Report structure (`ProfilerReport`):
+- `summary` - Aggregate stats (totalCalls, slowCalls, failedCalls, avgMs, p50Ms, p90Ms, p95Ms, maxMs)
+- `slow` - APIs exceeding threshold, sorted by duration descending
+- `failed` - APIs with status >= 400 or request failures
+- `all` - All captured API calls sorted by duration descending
+
+Logs slow APIs in real-time via Winston when they exceed the threshold during test execution.
 
 ### Excel Reader (excelReader.ts)
 Utility for reading test data from Excel files (.xlsx, .xls) for data-driven testing.
@@ -1304,3 +1393,35 @@ Key details:
 - FacctView section links: Case Register, Screening Register, Entity Register, Customer Screening, Transaction Screening, Queues, FacctView Reports, FacctView Watchlists
 - FacctView > Customer Screening submenu links: CS Dashboard, On Demand Screening, Batch Screening, CS Post-Screening Rules, CS Screening Profile
 - FacctView > Transaction Screening submenu links: TS Dashboard, Transaction Simulator, Pre-Screening Rules, TS Post-Screening Rules, TS Screening Profile
+
+### Data Export Steps (dataExport.steps.ts)
+Steps for testing the FacctList Data Export module (Templates, Destination Config).
+
+```gherkin
+# Background step - user is logged in and on FacctList
+Given user is logged in and on the FacctList dashboard
+
+# Navigation steps
+When user navigates to Data Export Templates
+When user navigates to Data Export Destination Config
+
+# Page load verification
+Then the Templates page should be loaded
+Then the Destination Config page should be loaded
+
+# Table content verification
+Then the templates table should display records or show no data message
+Then the destination config table should display records or show no data message
+```
+
+Key details:
+- Uses `DataExportPage` page object for all interactions
+- Flow: FacctList Dashboard → Data Export → Templates/Destination Config
+- Background step navigates to FacctList via `FacctumDashboardPage.navigateToListManagement()`
+- Page load verification checks for table rows or "no data" message
+- Table verification asserts either records exist or a no-data message is displayed
+- Feature file: `src/features/dataExport.feature` with scenarios for:
+  - Templates page navigation and verification (@Templates @Smoke, @Templates @Regression)
+  - Destination Config page navigation and verification (@DestinationConfig @Smoke, @DestinationConfig @Regression)
+- Tags: `@DataExport @FacctList`
+- Access page object via: `pageManager.getDataExportPage()`

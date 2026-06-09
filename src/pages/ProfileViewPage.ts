@@ -837,7 +837,7 @@ export class ProfileViewPage {
         const tmpPath = await download.path();
         const size = tmpPath ? (await import("fs")).statSync(tmpPath).size : 0;
         logger.info(`Downloaded from row icon ${i}: ${filename} (${size} bytes)`);
-        downloads.push({ filename, size });
+        downloads.push({ filename, size, displayedName: filename, filenameMatch: true });
         await this.captureToaster(`row-icon-${i}`);
       } catch {
         logger.warn(`Row icon ${i} didn't trigger download — may open popup instead`);
@@ -883,7 +883,7 @@ export class ProfileViewPage {
           const tmpPath = await download.path();
           const size = tmpPath ? (await import("fs")).statSync(tmpPath).size : 0;
           logger.info(`Downloaded: ${filename} (${size} bytes)`);
-          downloads.push({ filename, size });
+          downloads.push({ filename, size, displayedName: filename, filenameMatch: true });
           await this.captureToaster(`additional-${sel}`);
         } catch {
           continue;

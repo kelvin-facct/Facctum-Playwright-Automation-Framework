@@ -10,6 +10,11 @@ import { ProfileViewPage } from "./ProfileViewPage";
 import { IBLCreateSingleRecordPage } from "./IBLCreateSingleRecordPage";
 import { UKSANCTIONSadvfilterPage } from "./UKSANCTIONSadvfilterPage";
 import { OFACadvfilterPage } from "./OFACadvfilterPage";
+import { SearchPage } from "./SearchPage";
+import { DataExportPage } from "./DataExportPage";
+import { ReconciliationPage } from "./ReconciliationPage";
+import { SuppressedEnrichedPage } from "./SuppressedEnrichedPage";
+import { PressReleasesPage } from "./PressReleasesPage";
 
 /**
  * PageManager - Factory class for lazy-loading and caching page objects.
@@ -29,6 +34,11 @@ export class PageManager {
   private iblCreateSingleRecordPage?: IBLCreateSingleRecordPage;
   private ukSanctionsAdvFilterPage?: UKSANCTIONSadvfilterPage;
   private ofacAdvFilterPage?: OFACadvfilterPage;
+  private searchPage?: SearchPage;
+  private dataExportPage?: DataExportPage;
+  private reconciliationPage?: ReconciliationPage;
+  private suppressedEnrichedPage?: SuppressedEnrichedPage;
+  private pressReleasesPage?: PressReleasesPage;
 
   constructor(page: Page) {
     this.page = page;
@@ -109,5 +119,40 @@ export class PageManager {
       this.ofacAdvFilterPage = new OFACadvfilterPage(this.page);
     }
     return this.ofacAdvFilterPage;
+  }
+
+  getSearchPage(): SearchPage {
+    if (!this.searchPage) {
+      this.searchPage = new SearchPage(this.page);
+    }
+    return this.searchPage;
+  }
+
+  getDataExportPage(): DataExportPage {
+    if (!this.dataExportPage) {
+      this.dataExportPage = new DataExportPage(this.page);
+    }
+    return this.dataExportPage;
+  }
+
+  getReconciliationPage(): ReconciliationPage {
+    if (!this.reconciliationPage) {
+      this.reconciliationPage = new ReconciliationPage(this.page);
+    }
+    return this.reconciliationPage;
+  }
+
+  getSuppressedEnrichedPage(): SuppressedEnrichedPage {
+    if (!this.suppressedEnrichedPage) {
+      this.suppressedEnrichedPage = new SuppressedEnrichedPage(this.page);
+    }
+    return this.suppressedEnrichedPage;
+  }
+
+  getPressReleasesPage(): PressReleasesPage {
+    if (!this.pressReleasesPage) {
+      this.pressReleasesPage = new PressReleasesPage(this.page);
+    }
+    return this.pressReleasesPage;
   }
 }

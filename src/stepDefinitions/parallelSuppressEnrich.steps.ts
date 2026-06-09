@@ -6,6 +6,7 @@ import { PageManager } from "../pages/PageManager";
 import { logger } from "../utils/logger";
 import * as assert from "assert";
 import { Browser, BrowserContext, Page, chromium } from "playwright";
+import { BrowserManager } from "../helpers/browserManager";
 
 // ==================== Helper: Attribute section name mapping ====================
 

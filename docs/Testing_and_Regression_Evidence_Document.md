@@ -309,7 +309,31 @@ All planned test scenarios for release v1.2.1 have been executed successfully wi
 
 ---
 
-## 14. Sign-Off
+## 14. Release Conclusion
+
+The planned regression and sanity test scope for release v1.2.1 has been executed in full. All 40 scenarios — covering new feature validation, concurrency and data integrity checks, bulk operations, task management, and reporting — completed successfully with no critical or blocking issues observed within the executed scope.
+
+The following areas have been verified and confirmed working as expected:
+
+- **Attribute Suppress/Enrich (Full Screen)** — All attribute types (Alias, DOB, ID) suppress and enrich correctly with form fields, icons, and maker-checker workflow intact.
+- **Auto-Closure on Source Update** — System correctly auto-closes or triggers review when the upstream source performs a matching action.
+- **List Edit & Maker-Checker Actions** — Full approval lifecycle (submit, claim, unclaim, approve, reject, withdraw) operates without issue.
+- **Template Run** — Batch suppress/enrich via templates processes all attribute types successfully.
+- **Attachment Download** — Attachments are downloadable from all expected locations (Profile View, Audit Trail, Attribute Popup, Tasks).
+- **Stale Tab Concurrency** — Version conflict detection prevents data corruption across all tested HTTP methods (POST, PATCH, DELETE).
+- **Bulk Operations** — Bulk delete and concurrent upload handling function correctly.
+- **JWE (JSON Web Encryption)** — Token encryption and decryption verified; API authentication via JWE tokens functions correctly across all tested endpoints.
+- **Task Page & Reporting** — Closed tasks display correct terminal statuses; keyword reports and global search return accurate results.
+
+Supporting evidence — including screenshots, download verification logs, and automated test artifacts — is included in the appendices of this document.
+
+This document is shared as formal supporting evidence for the release. It confirms that the changes introduced in this release do not adversely impact existing functionality and that new capabilities meet the defined acceptance criteria.
+
+No further QA action is required prior to release promotion.
+
+---
+
+## 15. Sign-Off
 
 | Role | Name | Date | Signature |
 |------|------|------|-----------|

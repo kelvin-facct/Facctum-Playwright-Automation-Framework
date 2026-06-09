@@ -476,6 +476,33 @@ npx ts-node src/scripts/test-mongo.ts
 
 ## CI/CD Integration
 
+### API Performance Profiling
+
+The `NetworkProfiler` helper captures API performance metrics during test execution. Attach it to any Playwright page to identify slow or failing APIs.
+
+```typescript
+import { NetworkProfiler } from "../helpers/networkProfiler";
+
+const profiler = new NetworkProfiler({ threshold: 2000 });
+profiler.attach(page);
+
+// ... run test flow ...
+
+const report = profiler.getReport();
+profiler.printSlowApis(); // logs slow APIs via Winston
+
+// Attach to Allure report for visibility
+world.attach(JSON.stringify(report, null, 2), "application/json");
+```
+
+Options: `threshold` (ms, default 2000), `apiOnly` (default true), `includePattern`/`excludePattern` (regex URL filters).
+
+For a standalone full-session audit, use the script:
+
+```bash
+npx ts-node src/scripts/api-performance-audit.ts --threshold 3000 --flow full
+```
+
 ### Jenkins
 
 See `jenkins/README.md` for Jenkins pipeline setup.
