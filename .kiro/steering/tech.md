@@ -17,6 +17,7 @@
 - `mongodb` - MongoDB driver for database validation
 - `@aws-sdk/rds-signer` - AWS RDS IAM authentication
 - `xlsx` - Excel file reading for data-driven testing
+- `xml2js` - XML parsing for OFAC NON-SDN data mapping verification
 
 ## Common Commands
 
@@ -122,6 +123,10 @@ npx ts-node src/scripts/test-mongo.ts
 - `MONGO_PASSWORD` - MongoDB password (optional)
 - `MONGO_TLS_ENABLED` - Enable TLS connection (true/false, default: false)
 - `MONGO_VALIDATION` - Enable MongoDB validation for UI count verification (true/false, default: true for regulatory list tests). Set to `false` to disable.
+
+### OFAC NON-SDN Mapping Environment Variables
+- `OFAC_XML_PATH` - Path to OFAC NON-SDN enhanced XML source file (default: `%USERPROFILE%\Downloads\20260623T141041_cons_enhanced.xml`)
+- `OFAC_MAPPING_PATH` - Path to OFAC NON-SDN mapping Excel file (default: `%USERPROFILE%\Downloads\OFAC_NON_SDN_Mapping.xlsx`)
 
 ## Configuration Files
 - `src/config/cucumber.js` - Cucumber configuration

@@ -36,3 +36,7 @@ desktop.ini
 .idea/
 *.iml
 .vscode/settings.json
+
+# Python cache
+__pycache__/
+*.pyc

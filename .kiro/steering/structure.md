@@ -1425,3 +1425,275 @@ Key details:
   - Destination Config page navigation and verification (@DestinationConfig @Smoke, @DestinationConfig @Regression)
 - Tags: `@DataExport @FacctList`
 - Access page object via: `pageManager.getDataExportPage()`
+
+### OFAC NON-SDN Profile Verification Steps (ofacNonSdnProfileVerification.steps.ts)
+Steps for verifying OFAC NON-SDN record profile view field mappings (XML → DB → UI).
+
+```gherkin
+# Background steps - navigate to OFAC NON SDN
+Given user is logged in and navigated to FacctList
+When user navigates to Watchlist > Regulatory List > OFAC NON SDN
+Then the OFAC NON SDN records page should be displayed
+
+# Search and open record
+When user searches for record "OFACNONSDN-15268"
+And user opens the record profile view
+
+# Verify mapped fields via data table
+Then the profile view should display the following mapped fields:
+  | section        | field              | expectedValue                          |
+  | Header         | Record ID          | OFACNONSDN-15268                       |
+  | Header         | Entity Type        | Entity                                 |
+  | Header         | Primary Name       | BANK OF KUNLUN CO LTD                  |
+  | Names          | Full Name (Primary)| BANK OF KUNLUN CO LTD                  |
+  | Programs       | Program Name       | 561-Related                            |
+  | Address        | City               | Daqing                                 |
+  | IDs            | ID Type            | SWIFT/BIC                              |
+
+# Complex entity verification
+Then the profile view should display the primary name
+And the profile view should display multiple alias names
+And the profile view should display address details
+And the profile view should display ID numbers
+And the profile view should display sanctions programs
+
+# UI mapping gap analysis (compare UI fields against MongoDB document)
+Then user captures all visible sections and fields from the profile view
+And user compares visible UI fields against MongoDB document fields
+Then the comparison report should highlight unmapped DB fields not shown in UI
+
+# Evidence capture
+And user takes a screenshot for evidence "entity_15268_profile"
+And user captures all visible fields as evidence "entity_17013_profile"
+
+# Close profile view
+When user closes the profile view
+```
+
+Key details:
+- Verifies XML source → DB → UI field mapping for OFAC NON-SDN regulatory list records
+- Flow: FacctList → Watchlist → Regulatory List → OFAC NON SDN → Search → Open profile → Verify fields
+- Profile sections verified: Header, Names, Programs, Sanctions Type, Address, IDs, Lists, Legal
+- Field verification uses data table format with section/field/expectedValue columns
+- UI mapping gap analysis compares visible UI fields against MongoDB document to identify unmapped fields
+- Feature file: `src/features/ofacNonSdnProfileVerification.feature` with scenarios for:
+  - Specific entity profile field verification (@ProfileVerify @Entity15268 - BANK OF KUNLUN CO LTD)
+  - Complex entity with multiple names verification (@ProfileVerify @Entity17013)
+  - UI mapping gap identification (@ProfileVerify @UIMappingGaps)
+- Tags: `@OFACNonSDN @ProfileVerification @org:facctum`
+- Uses `@org:facctum` organization
+- Evidence screenshots captured for documentation/audit purposes
+
+### OFAC NON-SDN Data Mapping Verification Steps (ofacNonSdnMapping.steps.ts)
+Steps for comprehensive OFAC NON-SDN data integrity verification across the ingestion pipeline (XML → DB → UI).
+
+```gherkin
+# Background steps - navigate to OFAC NON SDN records
+Given user is logged in and on the home page
+When User click on "List Management" card
+And user clicks on Watchlist dropdown
+And user clicks on Regulatory list option
+And user searches and opens "OFAC NON SDN" regulatory list
+And user clicks on Records tab
+
+# ─── XML to DB Mapping ───
+
+# Verify XML to DB mapping for a specific entity
+When user verifies XML to DB mapping for entity "50476"
+Then all mapped XML fields should be present in MongoDB
+And the entity type should be "Individual"
+And the primary name should be "MARTELLY, Michel Joseph"
+And all name entries should match XML source
+And all address entries should match XML source
+And all ID document entries should match XML source
+And all feature fields should match XML source
+And no XML data should be missing from the database
+And the mapping verification result should be attached to report
+
+# Verify name type mappings
+Then the following name types should be mapped correctly:
+  | nameType       | description                         |
+  | Primary        | isPrimary=true, Latin script        |
+  | A.K.A.         | isPrimary=false, aliasType=A.K.A.   |
+  | F.K.A.         | isPrimary=false, aliasType=F.K.A.   |
+  | Native primary | isPrimary=true, non-Latin script    |
+  | Native A.K.A   | isPrimary=false, non-Latin script   |
+And name category "strong" should map from isLowQuality "false"
+And name category "weak" should map from isLowQuality "true"
+
+# Verify ID type mappings
+Then the following ID types should be present in MongoDB:
+  | idType                   | expectedValue   |
+  | BIK (RU)                 | 044030707       |
+  | SWIFT/BIC                | VTBRRUMM        |
+  | Legal Entity Number      | 253400V1H6ART1UQ0N98 |
+
+# Verify date format mapping
+Then the birthdate should be stored in ISO format "1961-02-12"
+And the birthdate date type should be "DOB"
+And isApproximate should be "false"
+And isDateRange should be "false"
+
+# Verify address part type mapping
+Then the following address mappings should be correct:
+  | xmlAddressPart | dbField          | expectedValue    |
+  | CITY           | city             | Miami            |
+  | STATE/PROVINCE | stateOrProvince  | FL               |
+And address country "United States" should be in addressDetailsList
+And address country "Haiti" should be in addressDetailsList
+
+# Bulk validation (all entities)
+When user verifies XML to DB mapping for all entities
+Then the pass rate should be at least 99 percent
+And the total field checks should be greater than 16000
+And the verification summary should be attached to report
+
+# ─── Profile View UI Verification ───
+
+# Search and open record for profile view verification
+When user searches for record "50476" in the records table
+And user clicks on the record ID to open profile view
+
+# Verify profile view header
+Then the profile view should display record ID "50476"
+And the profile view should show status "Active"
+
+# Verify PRIMARY DETAILS tab content
+And PRIMARY DETAILS tab should display:
+  | field              | expectedValue                         |
+  | Program name       | ILLICIT-DRUGS-EO14059                 |
+  | Sanctions imposed  | Executive Order 14059 Non-blocking    |
+  | Record type        | Individual                            |
+
+# Verify sanctions program list
+And the sanctions program list should display:
+  | listName                          | publishedDate |
+  | Non-SDN Menu-Based Sanctions List | 20 Aug 2024   |
+
+# Verify names section
+Then PRIMARY DETAILS tab should display the names section
+And the following names should be visible:
+  | fullName                          | nameType       |
+  | VTB BANK PUBLIC JOINT STOCK COMPANY | Primary      |
+And F.K.A. aliases should be displayed
+And A.K.A. aliases should be displayed
+And Native script names should be displayed
+
+# Verify addresses section
+Then PRIMARY DETAILS tab should display the addresses section
+And the following addresses should be visible:
+  | country            | city            | stateOrProvince |
+  | United States      | Miami           | FL              |
+
+# Verify ID numbers section
+Then PRIMARY DETAILS tab should display the ID numbers section
+And the following IDs should be visible:
+  | idType              | idValue        | country       |
+  | National ID No.     | 0032768386     | Haiti         |
+
+# Verify diverse ID types
+And the following ID types should be visible:
+  | idType                           |
+  | ISIN                             |
+  | Unified Social Credit Code (USCC)|
+
+# Verify ADDITIONAL DETAILS tab
+And user clicks on ADDITIONAL DETAILS tab
+Then ADDITIONAL DETAILS tab should display:
+  | field           | expectedValue          |
+  | Date of birth   | 1961-02-12             |
+  | Place of birth  | Port-au-Prince, Haiti  |
+  | Gender          | Male                   |
+  | Nationality     | Haiti                  |
+And ADDITIONAL DETAILS tab should display source specific information
+And the additional information should contain "treasury.gov"
+And organization established date should be "1990-10-17"
+
+# Verify source specific information
+Then source specific information should display:
+  | tag                                    | valueContains                                      |
+  | Executive Order 14059 information:     | Prohibition on any transactions in foreign exchange|
+
+# Verify legal authority
+Then the legal authority should display "Executive Order 14059 (Illicit Drugs)"
+
+# ─── UI Gap Analysis ───
+
+# Capture and compare fields
+And user captures all fields from PRIMARY DETAILS tab
+And user clicks on ADDITIONAL DETAILS tab
+And user captures all fields from ADDITIONAL DETAILS tab
+Then user compares captured UI fields against MongoDB document
+And any DB fields not visible on UI should be reported
+And the number of unmapped DB fields should be less than 3
+And the UI gap analysis should be attached to report
+
+# ─── Excel Mapping Sheet Validation ───
+
+# Verify mapping sheet entries
+When user loads the OFAC NON SDN mapping sheet
+Then all mapping entries with a SingleStore field should have a valid DB target
+And conditional mappings with "if equals to" should be applied correctly
+And no mapping entry should point to a non-existent collection field
+
+# Verify intentionally unmapped XML fields
+When user parses the XML source file for entity "50476"
+And user compares all XML fields against the mapping sheet
+Then the following XML fields should be intentionally unmapped:
+  | xmlField                   | reason                          |
+  | @refId attributes          | Internal OFAC reference IDs     |
+  | generalInfo.identityId     | Internal identity tracking      |
+And no business-critical data should be missing from the mapping
+```
+
+Key details:
+- Comprehensive data integrity verification across the full OFAC NON-SDN ingestion pipeline (XML → DB → UI)
+- Flow: FacctList → Watchlist → Regulatory List → OFAC NON SDN → Records tab
+- Three verification layers:
+  1. **XML to DB Mapping** - Validates XML source fields are correctly stored in MongoDB (names, addresses, IDs, dates, features)
+  2. **Profile View UI** - Verifies DB fields are correctly rendered on the UI profile view (Primary Details + Additional Details tabs)
+  3. **UI Gap Analysis** - Identifies DB fields not displayed on the UI to detect mapping gaps
+- Additionally validates the Excel mapping sheet for correctness and completeness
+- Feature file: `src/features/ofacNonSdnMapping.feature` with scenarios for:
+  - XML to DB mapping for Individual record entity 50476 (@XMLtoDBMapping @smoke)
+  - XML to DB mapping for Entity record entity 17013 (@XMLtoDBMapping @smoke)
+  - XML to DB mapping for diverse records via Scenario Outline (@XMLtoDBMapping @regression)
+  - Name type mapping verification (@XMLtoDBMapping @nameTypes)
+  - ID type mapping verification (@XMLtoDBMapping @idTypes)
+  - Date format mapping verification (@XMLtoDBMapping @dateFormat)
+  - Address part type mapping (@XMLtoDBMapping @addressMapping)
+  - Bulk validation of all 442 entities (@XMLtoDBMapping @bulkValidation)
+  - Profile view Individual primary details (@ProfileView @smoke)
+  - Profile view Entity primary details (@ProfileView @smoke)
+  - Profile view name types display (@ProfileView @names)
+  - Profile view address details (@ProfileView @addresses)
+  - Profile view ID numbers (@ProfileView @ids)
+  - Profile view Additional Details tab (@ProfileView @additionalDetails)
+  - Entity additional details and source specific info (@ProfileView @additionalDetails @entity, @sourceSpecific)
+  - Legal authority display (@ProfileView @legalAuthority)
+  - Diverse ID types for Entity record (@ProfileView @diverseIds)
+  - UI gap analysis for single record (@UIGapAnalysis @regression)
+  - UI gap analysis for diverse records via Scenario Outline (@UIGapAnalysis @regression)
+  - Excel mapping sheet validation (@MappingSheet @regression)
+  - Unmapped XML fields verification (@MappingSheet @regression)
+- Tags: `@OFACNonSDNMapping @RegulatoryList @org:datavium`
+- Uses `@org:datavium` organization
+- MongoDB collection: `dataviumRegulatoryListHist` in `screenDB`
+- Test entities: 50476 (Individual), 17013 (Entity - 31 names, 8 IDs), 15268 (Entity - SWIFT/BIC), 30930 (Entity - USCC/ISIN), 9639 (Individual - basic)
+- Running:
+  ```bash
+  # Run all OFAC NON-SDN mapping tests
+  npm run test:qa -- --tags "@OFACNonSDNMapping"
+  
+  # Run only XML to DB mapping (smoke)
+  npm run test:qa -- --tags "@XMLtoDBMapping and @smoke"
+  
+  # Run profile view verification
+  npm run test:qa -- --tags "@OFACNonSDNMapping and @ProfileView"
+  
+  # Run UI gap analysis
+  npm run test:qa -- --tags "@UIGapAnalysis"
+  
+  # Run mapping sheet validation
+  npm run test:qa -- --tags "@MappingSheet"
+  ```

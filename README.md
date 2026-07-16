@@ -10,6 +10,8 @@ End-to-end test automation framework for the Facctum AML (Anti-Money Laundering)
 - **Allure Reports** - Rich test reporting with history tracking
 - **Winston** - Logging
 - **PostgreSQL** - Database testing support (with AWS RDS IAM auth)
+- **MongoDB** - Data validation against backend database
+- **xml2js** - XML parsing for data mapping verification
 
 ## Prerequisites
 
@@ -473,6 +475,50 @@ await mongo.disconnect();
 ```bash
 npx ts-node src/scripts/test-mongo.ts
 ```
+
+## OFAC NON-SDN Data Mapping Verification
+
+Comprehensive data integrity verification across the full OFAC NON-SDN ingestion pipeline (XML → DB → UI). This validates that XML source fields are correctly stored in MongoDB and rendered in the UI profile view.
+
+### Prerequisites
+
+1. **XML source file** — The OFAC NON-SDN enhanced XML export file
+2. **MongoDB access** — SSH tunnel to the database with the `dataviumRegulatoryListHist` collection
+3. **xml2js dependency** — Install if not present: `npm install xml2js @types/xml2js`
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `OFAC_XML_PATH` | Path to OFAC NON-SDN enhanced XML file | `%USERPROFILE%\Downloads\20260623T141041_cons_enhanced.xml` |
+| `OFAC_MAPPING_PATH` | Path to OFAC NON-SDN mapping Excel file | `%USERPROFILE%\Downloads\OFAC_NON_SDN_Mapping.xlsx` |
+
+### Running
+
+```bash
+# Run all OFAC NON-SDN mapping tests
+npm run test:qa -- --tags "@OFACNonSDNMapping"
+
+# Run only XML to DB mapping (smoke)
+npm run test:qa -- --tags "@XMLtoDBMapping and @smoke"
+
+# Run profile view verification
+npm run test:qa -- --tags "@OFACNonSDNMapping and @ProfileView"
+
+# Run UI gap analysis
+npm run test:qa -- --tags "@UIGapAnalysis"
+
+# Run mapping sheet validation
+npm run test:qa -- --tags "@MappingSheet"
+```
+
+### Verification Layers
+
+1. **XML to DB Mapping** — Validates names, addresses, IDs, dates, sanctions programs, legal authorities, and features from XML source against MongoDB
+2. **Profile View UI** — Verifies DB fields are correctly rendered in the UI across Primary Details and Additional Details tabs
+3. **UI Gap Analysis** — Identifies DB fields not displayed on the UI to detect mapping gaps
+
+Uses `@org:datavium` organization. MongoDB collection: `dataviumRegulatoryListHist` in `screenDB`.
 
 ## CI/CD Integration
 

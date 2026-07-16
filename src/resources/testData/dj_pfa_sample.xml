@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PFA date="202607052200" type="full">
+<!-- ==================== REFERENCE DATA ==================== -->
+<CountryList>
+<CountryName code="CAFR" name="Central African Republic" IsTerritory="False" ProfileURL="central african republic.doc" />
+<CountryName code="TOGO" name="Togo" IsTerritory="False" ProfileURL="togo.doc" />
+<CountryName code="CHIL" name="Chile" IsTerritory="False" ProfileURL="chile.doc" />
+<CountryName code="UK" name="United Kingdom" IsTerritory="False" ProfileURL="united kingdom.doc" />
+<CountryName code="USA" name="United States" IsTerritory="False" ProfileURL="united states.doc" />
+<CountryName code="IRAN" name="Iran" IsTerritory="False" ProfileURL="iran.doc" />
+<CountryName code="RUSSIA" name="Russia" IsTerritory="False" ProfileURL="russia.doc" />
+<CountryName code="INDIA" name="India" IsTerritory="False" ProfileURL="india.doc" />
+<CountryName code="CHINA" name="China" IsTerritory="False" ProfileURL="china.doc" />
+<CountryName code="UAE" name="United Arab Emirates" IsTerritory="False" ProfileURL="united arab emirates.doc" />
+</CountryList>
+<OccupationList>
+<Occupation code="1" name="Heads &amp; Deputies State/National Government" />
+<Occupation code="2" name="National Government Ministers" />
+<Occupation code="3" name="Members of the National Legislature" />
+<Occupation code="4" name="Senior Civil Servants-National Government" />
+<Occupation code="5" name="Senior Civil Servants-Regional Government" />
+<Occupation code="6" name="Embassy &amp; Consular Staff" />
+<Occupation code="7" name="Senior Members of the Armed Forces" />
+<Occupation code="8" name="Senior Members of the Police Services" />
+<Occupation code="9" name="Senior Members of the Secret Services" />
+<Occupation code="10" name="Senior Members of the Judiciary" />
+<Occupation code="11" name="State Corporation Executives" />
+<Occupation code="12" name="State Agency Officials" />
+<Occupation code="13" name="Heads &amp; Deputy Heads of Regional Government" />
+<Occupation code="14" name="Regional Government Ministers" />
+<Occupation code="15" name="Religious Leaders" />
+<Occupation code="16" name="Political Party Officials" />
+<Occupation code="17" name="International Organisation Officials" />
+<Occupation code="18" name="City Mayors" />
+<Occupation code="19" name="Political Pressure and Labour Group Officials" />
+<Occupation code="20" name="Other" />
+<Occupation code="22" name="Local Public Officials" />
+<Occupation code="26" name="International Sporting Organisation Officials" />
+</OccupationList>
+<RelationshipList>
+<Relationship code="1" name="Wife" />
+<Relationship code="2" name="Husband" />
+<Relationship code="3" name="Brother" />
+<Relationship code="4" name="Sister" />
+<Relationship code="5" name="Son" />
+<Relationship code="6" name="Daughter" />
+<Relationship code="7" name="Mother" />
+<Relationship code="8" name="Father" />
+<Relationship code="28" name="Business Associate" />
+<Relationship code="35" name="Associate" />
+<Relationship code="43" name="Shareholder/Owner" />
+<Relationship code="45" name="Parent Company" />
+<Relationship code="46" name="Subsidiary" />
+<Relationship code="47" name="Asset" />
+</RelationshipList>
+<SanctionsReferencesList>
+<ReferenceName code="1" name="OFAC - Specially Designated National List" status="Current" Description2Id="1" />
+<ReferenceName code="5" name="OFAC - Specially Designated Global Terrorist List" status="Current" Description2Id="1" />
+<ReferenceName code="7" name="OFAC - Specially Designated Narcotics Trafficker List" status="Current" Description2Id="1" />
+<ReferenceName code="9" name="OFAC - Principal Significant Foreign Narcotics Trafficker List" status="Current" Description2Id="1" />
+<ReferenceName code="11" name="OFAC - WMD Trade Control Regulations List" status="Current" Description2Id="1" />
+<ReferenceName code="13" name="OFAC - WMD Proliferators &amp; Supporters List" status="Current" Description2Id="1" />
+<ReferenceName code="50" name="UK HM Treasury - Consolidated List" status="Current" Description2Id="1" />
+<ReferenceName code="52" name="EU - Consolidated List" status="Current" Description2Id="1" />
+<ReferenceName code="54" name="UN - Security Council Consolidated List" status="Current" Description2Id="1" />
+</SanctionsReferencesList>
+<DateTypeList>
+<DateType RecordType="Person" Id="1" name="Date of Birth" />
+<DateType RecordType="Person" Id="2" name="Deceased Date" />
+<DateType RecordType="Entity" Id="3" name="Date of Registration" />
+<DateType RecordType="Entity" Id="6" name="Cessation Date" />
+<DateType RecordType="Person" Id="8" name="Inactive as of (PEP)" />
+<DateType RecordType="Person" Id="9" name="Inactive as of (RCA related to PEP)" />
+</DateTypeList>
+<NameTypeList>
+<NameType NameTypeID="1" RecordType="Person">Primary Name</NameType>
+<NameType NameTypeID="2" RecordType="Person">Also Known As</NameType>
+<NameType NameTypeID="3" RecordType="Person">Low Quality AKA</NameType>
+<NameType NameTypeID="4" RecordType="Person">Maiden Name</NameType>
+<NameType NameTypeID="5" RecordType="Person">Formerly Known As</NameType>
+<NameType NameTypeID="6" RecordType="Person">Spelling Variation</NameType>
+<NameType NameTypeID="7" RecordType="Entity">Primary Name</NameType>
+<NameType NameTypeID="8" RecordType="Entity">Also Known As</NameType>
+<NameType NameTypeID="9" RecordType="Entity">Formerly Known As</NameType>
+<NameType NameTypeID="10" RecordType="Entity">Spelling Variation</NameType>
+<NameType NameTypeID="11" RecordType="Entity">Low Quality AKA</NameType>
+<NameType NameTypeID="12" RecordType="Person">Expanded Language Variation</NameType>
+<NameType NameTypeID="13" RecordType="Entity">Expanded Language Variation</NameType>
+<NameType NameTypeID="14" RecordType="Person">Reclassified AKA</NameType>
+<NameType NameTypeID="15" RecordType="Entity">Reclassified AKA</NameType>
+</NameTypeList>
+<RoleTypeList>
+<RoleType Id="1" name="Primary Occupation" />
+<RoleType Id="2" name="Other Roles" />
+<RoleType Id="3" name="Previous Roles" />
+</RoleTypeList>
+<!-- ==================== PERSON RECORDS ==================== -->
+<!-- Person 1: Full data - PEP with DOB, multiple names, roles, countries, ID, images, profile notes -->
+<Person id="99001" action="add" date="01-Jul-2026"><Gender>Male</Gender><ActiveStatus>Active</ActiveStatus><Deceased>No</Deceased><NameDetails><Name NameType="Primary Name"><NameValue><FirstName>John</FirstName><MiddleName>Michael</MiddleName><Surname>Smith</Surname><TitleHonorific>Mr</TitleHonorific></NameValue></Name><Name NameType="Also Known As"><NameValue><FirstName>Johnny</FirstName><Surname>Smith</Surname></NameValue></Name><Name NameType="Spelling Variation"><NameValue><FirstName>Jon</FirstName><Surname>Smyth</Surname></NameValue><NameValue><FirstName>Jhon</FirstName><Surname>Smith</Surname></NameValue></Name><Name NameType="Low Quality AKA"><NameValue><FirstName>JS</FirstName><Surname>The Boss</Surname></NameValue></Name><Name NameType="Maiden Name"><NameValue><MaidenName>Johnson</MaidenName></NameValue></Name><Name NameType="Formerly Known As"><NameValue><FirstName>John</FirstName><Surname>Johnson</Surname></NameValue></Name></NameDetails><Descriptions><Description Description1="1" /><Description Description1="3" Description2="5" /></Descriptions><RoleDetail><Roles RoleType="Primary Occupation"><OccTitle OccCat="1">President of Test Country</OccTitle></Roles><Roles RoleType="Previous Roles"><OccTitle SinceDay="01" SinceMonth="Jan" SinceYear="2015" ToDay="31" ToMonth="Dec" ToYear="2020" OccCat="2">Minister of Finance</OccTitle><OccTitle SinceYear="2010" ToYear="2015" OccCat="3">Member of Parliament</OccTitle></Roles><Roles RoleType="Other Roles"><OccTitle OccCat="16">Chairman, National Party</OccTitle></Roles></RoleDetail><DateDetails><Date DateType="Date of Birth"><DateValue Day="15" Month="Mar" Year="1970" /></Date></DateDetails><BirthPlace><Place name="London,United Kingdom" /></BirthPlace><CountryDetails><Country CountryType="Citizenship"><CountryValue Code="UK" /></Country><Country CountryType="Resident of"><CountryValue Code="UK" /><CountryValue Code="UAE" /></Country><Country CountryType="Jurisdiction"><CountryValue Code="UK" /></Country><Country CountryType="Country of Reported Allegation"><CountryValue Code="UK" /></Country></CountryDetails><IDNumberTypes><ID IDType="Passport"><IDValue>AB1234567</IDValue></ID><ID IDType="National ID"><IDValue>NI-99887766</IDValue></ID><ID IDType="Tax ID"><IDValue>TX-2024-001122</IDValue></ID></IDNumberTypes><Associate id="99002" code="1" ex="No" /><Associate id="99003" code="5" ex="No" /><ProfileNotes>PROFILE CREATED: 01-Jul-2026
+
+Keywords: corruption, money laundering, sanctions evasion
+
+Profile:
+John Michael Smith is a senior political figure under investigation for alleged corruption and sanctions evasion involving entities in multiple jurisdictions.
+
+PROFILE UPDATED: 01-Jul-2026
+Subject to travel restrictions and asset freeze orders in the UK and EU.</ProfileNotes><SourceDescription><Source name="Financial Times, 01-Jul-2026, via Factiva.com" /><Source name="Reuters, 28-Jun-2026, via Factiva.com" /></SourceDescription><Images><Image URL="https://example.com/images/person_99001.jpg" /></Images></Person>
+<!-- Person 2: Female, Deceased, with Maiden Name -->
+<Person id="99002" action="add" date="01-Jul-2026"><Gender>Female</Gender><ActiveStatus>Active</ActiveStatus><Deceased>Yes</Deceased><NameDetails><Name NameType="Primary Name"><NameValue><FirstName>Jane</FirstName><MiddleName>Anne</MiddleName><Surname>Smith</Surname></NameValue></Name><Name NameType="Maiden Name"><NameValue><MaidenName>Williams</MaidenName></NameValue></Name></NameDetails><Descriptions><Description Description1="1" /></Descriptions><RoleDetail><Roles RoleType="Primary Occupation"><OccTitle OccCat="16">Deceased</OccTitle></Roles></RoleDetail><DateDetails><Date DateType="Date of Birth"><DateValue Day="20" Month="Jun" Year="1972" /></Date><Date DateType="Deceased Date"><DateValue Day="10" Month="Jan" Year="2025" /></Date></DateDetails><BirthPlace><Place name="Manchester,United Kingdom" /></BirthPlace><CountryDetails><Country CountryType="Citizenship"><CountryValue Code="UK" /></Country><Country CountryType="Resident of"><CountryValue Code="UK" /></Country></CountryDetails><ProfileNotes>RCA - Relative/Close Associate of PEP John Michael Smith (id:99001). Wife of the subject.</ProfileNotes><SourceDescription><Source name="BBC News, 11-Jan-2025" /></SourceDescription></Person>
+<!-- Person 3: Sanctioned individual with sanctions references -->
+<Person id="99003" action="add" date="01-Jul-2026"><Gender>Male</Gender><ActiveStatus>Active</ActiveStatus><Deceased>No</Deceased><NameDetails><Name NameType="Primary Name"><NameValue><FirstName>James</FirstName><Surname>Smith</Surname></NameValue></Name><Name NameType="Also Known As"><NameValue><FirstName>Jim</FirstName><Surname>Smith</Surname></NameValue></Name></NameDetails><Descriptions><Description Description1="1" /><Description Description1="2" Description2="1" /><Description Description1="2" Description2="5" /></Descriptions><RoleDetail><Roles RoleType="Primary Occupation"><OccTitle OccCat="11">CEO, State Mining Corporation</OccTitle></Roles></RoleDetail><DateDetails><Date DateType="Date of Birth"><DateValue Month="May" Year="1995" /></Date></DateDetails><BirthPlace><Place name="Birmingham,United Kingdom" /></BirthPlace><CountryDetails><Country CountryType="Citizenship"><CountryValue Code="UK" /></Country><Country CountryType="Resident of"><CountryValue Code="RUSSIA" /></Country><Country CountryType="Jurisdiction"><CountryValue Code="UK" /><CountryValue Code="RUSSIA" /></Country></CountryDetails><IDNumberTypes><ID IDType="Passport"><IDValue>CD9876543</IDValue></ID></IDNumberTypes><Associate id="99001" code="8" ex="No" /><ProfileNotes>PROFILE CREATED: 01-Jul-2026
+
+Keywords: sanctions, terrorism financing
+
+Profile:
+James Smith is the son of PEP John Smith and is designated on multiple sanctions lists for alleged involvement in terrorism financing and sanctions evasion.
+
+Listed on:
+- OFAC SDN List (added 15-Jun-2026)
+- UK HM Treasury Consolidated List (added 20-Jun-2026)
+- EU Consolidated List (added 22-Jun-2026)</ProfileNotes><SourceDescription><Source name="US Treasury Press Release, 15-Jun-2026" /><Source name="UK Foreign Office, 20-Jun-2026" /></SourceDescription><Images><Image URL="https://example.com/images/person_99003.jpg" /></Images></Person>
+<!-- Person 4: Inactive PEP with Address details -->
+<Person id="99004" action="add" date="01-Jul-2026"><Gender>Male</Gender><ActiveStatus>Inactive</ActiveStatus><Deceased>No</Deceased><NameDetails><Name NameType="Primary Name"><NameValue><FirstName>Carlos</FirstName><Surname>Parra Merino</Surname></NameValue></Name><Name NameType="Also Known As"><NameValue><FirstName>Carlos</FirstName><Surname>Parra</Surname></NameValue><NameValue><FirstName>Carlos</FirstName><Surname>Merino</Surname></NameValue></Name></NameDetails><Descriptions><Description Description1="1" /></Descriptions><RoleDetail><Roles RoleType="Primary Occupation"><OccTitle OccCat="6">See Previous Roles</OccTitle></Roles><Roles RoleType="Previous Roles"><OccTitle SinceYear="2006" ToDay="16" ToMonth="Sep" ToYear="2010" OccCat="6">Non-Resident Chilean Ambassador to Estonia</OccTitle><OccTitle SinceYear="1990" ToYear="1994" OccCat="6">Chilean Ambassador to Sweden</OccTitle></Roles></RoleDetail><DateDetails><Date DateType="Date of Birth"><DateValue Day="25" Month="Nov" Year="1942" /></Date><Date DateType="Inactive as of (PEP)"><DateValue Day="16" Month="Sep" Year="2010" /></Date></DateDetails><BirthPlace><Place name="Concepción,Chile" /></BirthPlace><CountryDetails><Country CountryType="Citizenship"><CountryValue Code="CHIL" /></Country><Country CountryType="Resident of"><CountryValue Code="CHIL" /></Country><Country CountryType="Jurisdiction"><CountryValue Code="CHIL" /></Country></CountryDetails><IDNumberTypes><ID IDType="National ID"><IDValue>3.378.462-7</IDValue></ID></IDNumberTypes><Address><AddressLine>Av. Libertador Bernardo O'Higgins 1449</AddressLine><AddressCity>Santiago</AddressCity><AddressCountry Code="CHIL" /></Address><Images><Image URL="https://example.com/images/person_99004.jpg" /></Images></Person>
+<!-- ==================== SPECIAL ENTITY RECORDS ==================== -->
+<SpecialEntity id="99005"><Associate id="99001" code="43" ex="No" /><Associate id="99003" code="43" ex="No" /><Associate id="99004" code="45" ex="No" /></SpecialEntity>
+<!-- ==================== RECORDS SECTION (end of file metadata) ==================== -->
+<Records type="full" PersonRecords="4" EntityRecords="0" SpecialEntityRecords="1" />
+</PFA>
